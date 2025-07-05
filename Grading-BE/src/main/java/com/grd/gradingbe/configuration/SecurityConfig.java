@@ -28,11 +28,11 @@ import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfiguration
+public class SecurityConfig
 {
     private final JwtFilter jwtFilter;
 
-    public SecurityConfiguration(JwtFilter jwtFilter)
+    public SecurityConfig(JwtFilter jwtFilter)
     {
         this.jwtFilter = jwtFilter;
     }
@@ -100,8 +100,13 @@ public class SecurityConfiguration
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/reset-password", "/api/auth/forgot-password")
                         .permitAll()
+
                         .requestMatchers("")
                         .hasRole("ADMIN")
+
+                        .requestMatchers("")
+                        .hasRole("USER")
+
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2 -> oauth2

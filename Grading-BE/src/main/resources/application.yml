@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: Grading-BE
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    open-in-view: false
+
+  datasource:
+    url: jdbc:postgresql://
+    username:
+    password:
+    driver-class-name: org.postgresql.Driver
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://accounts.google.com
+
+server:
+  error:
+    include-message: always
+  port: 8080
+
+app:
+  base-url: http://localhost:8080
+  jwt:
+    issuer: http://localhost:8080
+
+jwt:
+  secret: 22bad11769d6d81745473399385273a9b3a4a1b79c80ebd9549c4ad2dced236af529e3a0cc9ad43b1eed3ac810bfd8151434062cafdc188d03b8cada8d6c839e

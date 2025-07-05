@@ -6,17 +6,26 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Map;
 import java.util.function.Function;
 
+@Service
 public class JwtService
 {
     private final SecretKey key;
     @Value("${app.jwt.issuer}") String serverIss;
+
+    private final Instant now = Instant.now();
+    private final Instant authTokenExpiry = now.plus(7, ChronoUnit.DAYS);
+    private final Instant refreshTokenExpiry = now.plus(30, ChronoUnit.DAYS);
+
 
     public JwtService(@Value("${jwt.secret}") String secretKey)
     {
@@ -25,24 +34,38 @@ public class JwtService
 
     public String generateAuthenticationToken(User user) {
         return Jwts.builder()
-                .claims()
-                .issuer(serverIss)
-                .subject(account.getUser_id().toString())
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + authTokenExpirationMs))
+                .header().add("typ", "access")
                 .and()
+                .issuer(serverIss)
+                .subject(user.getId().toString())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(authTokenExpiry))
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 
-    public String generateVerificationToken(Map<String, Object> claims, String email)
+    public String generateRefreshToken(User user) {
+        return Jwts.builder()
+                .header().add("typ", "refresh")
+                .and()
+                .issuer(serverIss)
+                .subject(user.getId().toString())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(refreshTokenExpiry))
+                .signWith(key, Jwts.SIG.HS256)
+                .compact();
+    }
+
+    public String generatePayloadToken(User user, Claims claims)
     {
-        return  Jwts.builder()
+        return Jwts.builder()
+                .header().add("typ", "payload")
+                .and()
                 .claims(claims)
                 .issuer(serverIss)
-                .subject(email)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + regTokenExpirationMs))
+                .subject(user.getId().toString())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(refreshTokenExpiry))
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
@@ -55,6 +78,19 @@ public class JwtService
                     .parseSignedClaims(token);
             return true;
         } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isTokenExpired(String token)
+    {
+        try
+        {
+            return extractClaim(token, Claims::getExpiration).before(Date.from(now));
+        }
+        catch (ExpiredJwtException e)
+        {
+            //Throw exception
             return false;
         }
     }
@@ -72,32 +108,5 @@ public class JwtService
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-    }
-
-    public Integer extractAuthenticationClaim(String token)
-    {
-        Claims claims = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-        return Integer.parseInt(claims.getSubject());
-    }
-
-    private Date extractExpiration(String token)
-    {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-    public boolean isTokenExpired(String token)
-    {
-        try
-        {
-            return extractExpiration(token).before(new Date());
-        }
-        catch (ExpiredJwtException e)
-        {
-            throw new ApiRequestException("Token expired");
-        }
     }
 }
