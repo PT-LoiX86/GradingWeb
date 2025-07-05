@@ -81,6 +81,7 @@ public class SecurityConfig
     public CorsConfigurationSource corsConfigurationSource()
     {
         CorsConfiguration configuration = new CorsConfiguration();
+        // Set allowed origin to project's front-end URL in production
         configuration.addAllowedOrigin("${app.base-url}");
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
@@ -101,10 +102,10 @@ public class SecurityConfig
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/reset-password", "/api/auth/forgot-password")
                         .permitAll()
 
-                        .requestMatchers("")
+                        .requestMatchers("/**")
                         .hasRole("ADMIN")
 
-                        .requestMatchers("")
+                        .requestMatchers("/api/auth/**", "/api/users/**", "/api/grades", "/api/grades/**", "/api/rankings", "/api/forums/**")
                         .hasRole("USER")
 
                         .anyRequest().authenticated())
