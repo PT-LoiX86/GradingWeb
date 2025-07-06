@@ -4,14 +4,14 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
     open-in-view: false
 
   datasource:
-    url: jdbc:postgresql://
-    username:
-    password:
+    url: jdbc:postgresql://postgres:5432/grading_db?createDatabaseIfNotExist=true
+    username: root
+    password: root
     driver-class-name: org.postgresql.Driver
 
   security:

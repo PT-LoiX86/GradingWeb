@@ -1,0 +1,9 @@
+.idea/
+.vscode/
+
+# Eclipse Core
+.classpath
+.project
+.settings/
+
+.env
