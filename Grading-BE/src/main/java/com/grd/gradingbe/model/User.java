@@ -3,6 +3,7 @@ package com.grd.gradingbe.model;
 import com.grd.gradingbe.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,29 +15,39 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
+@Table(name = "users")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class User implements UserDetails
-{
+@Builder
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
     private String username;
+
     private String email;
+
     private String password_hash;
+
     private Role role;
+
     private String full_name;
+
     private String phone;
+
     private String avatar_url;
+
     private Boolean is_active;
+
     @Column(insertable = false, updatable = false)
     private LocalDateTime created_at;
+
     private LocalDateTime updated_at;
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities()
-    {
+    public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));
     }
 
