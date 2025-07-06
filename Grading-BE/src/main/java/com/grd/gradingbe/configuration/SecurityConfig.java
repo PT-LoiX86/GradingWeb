@@ -1,7 +1,7 @@
 package com.grd.gradingbe.configuration;
 
 import com.grd.gradingbe.utilities.JwtFilter;
-import io.jsonwebtoken.security.Keys;
+import com.grd.gradingbe.utilities.OAuth2LoginSuccessHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,51 +10,34 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtDecoders;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
-import org.springframework.security.oauth2.server.resource.authentication.JwtIssuerAuthenticationManagerResolver;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig
 {
     private final JwtFilter jwtFilter;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
-    public SecurityConfig(JwtFilter jwtFilter)
+    public SecurityConfig(JwtFilter jwtFilter, OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler)
     {
         this.jwtFilter = jwtFilter;
+        this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
     }
 
-    @Value("${jwt.secret}")
-    private String serverJwtSecret;
+    @Value("${env.app.front-end.base-url}")
+    private String frontendURL;
 
-    @Value("${app.jwt.issuer}")
-    private String serverJwtIssuer;
-
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    private String googleJwtIssuer;
-
-    public JwtDecoder googleJwtDecoder()
+    @Bean
+    public PasswordEncoder passwordEncoder()
     {
-        return JwtDecoders.fromIssuerLocation(googleJwtIssuer);
-    }
-
-    public JwtDecoder serverJwtDecoder()
-    {
-        SecretKey key = Keys.hmacShaKeyFor(serverJwtSecret.getBytes(StandardCharsets.UTF_8));
-        return NimbusJwtDecoder.withSecretKey(key).build();
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
@@ -64,26 +47,14 @@ public class SecurityConfig
     }
 
     @Bean
-    public JwtIssuerAuthenticationManagerResolver authenticationManagerResolver()
-    {
-        Map<String, AuthenticationManager> authenticationManagers = new HashMap<>();
-
-        JwtAuthenticationProvider googleAuthProvider = new JwtAuthenticationProvider(googleJwtDecoder());
-        authenticationManagers.put(googleJwtIssuer, googleAuthProvider::authenticate);
-
-        JwtAuthenticationProvider serverAuthProvider = new JwtAuthenticationProvider(serverJwtDecoder());
-        authenticationManagers.put(serverJwtIssuer, serverAuthProvider::authenticate);
-
-        return new JwtIssuerAuthenticationManagerResolver(authenticationManagers::get);
-    }
-
-    @Bean
     public CorsConfigurationSource corsConfigurationSource()
     {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Set allowed origin to project's front-end URL in production
-        configuration.addAllowedOrigin("${app.base-url}");
-        configuration.addAllowedMethod("*");
+        configuration.addAllowedOrigin(frontendURL);
+        configuration.addAllowedMethod("GET");
+        configuration.addAllowedMethod("POST");
+        configuration.addAllowedMethod("PUT");
+        configuration.addAllowedMethod("DELETE");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
 
@@ -99,19 +70,17 @@ public class SecurityConfig
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/reset-password", "/api/auth/forgot-password")
+                        .requestMatchers("/api/auth/**")
                         .permitAll()
 
-                        .requestMatchers("/**")
+                        .requestMatchers("/api/admin/**")
                         .hasRole("ADMIN")
 
-                        .requestMatchers("/api/auth/**", "/api/users/**", "/api/grades", "/api/grades/**", "/api/rankings", "/api/forums/**")
-                        .hasRole("USER")
-
-                        .anyRequest().authenticated())
+                        .anyRequest().hasAnyRole("USER", "ADMIN"))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .authenticationManagerResolver(authenticationManagerResolver()))
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2LoginSuccessHandler)
+                )
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         return http.build();
