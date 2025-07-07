@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping(path = "/api/auth")
 public class AuthController
@@ -28,5 +30,12 @@ public class AuthController
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request)
     {
         return ResponseEntity.ok(authService.register(request));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request)
+    {
+        String refreshToken = request.get("refreshToken");
+        return ResponseEntity.ok(authService.refreshToken(refreshToken));
     }
 }

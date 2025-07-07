@@ -22,9 +22,8 @@ public class JwtServiceImpl implements JwtService
     private final SecretKey key;
     private final String serverIss;
 
-    private final Instant now = Instant.now();
-    private final Instant authTokenExpiry = now.plus(7, ChronoUnit.DAYS);
-    private final Instant refreshTokenExpiry = now.plus(30, ChronoUnit.DAYS);
+    private final long authTokenExpiryHours = 7 * 24; // 7 days in hours
+    private final long refreshTokenExpiryHours = 30 * 24; // 30 days in hours
 
 
     public JwtServiceImpl(@Value("${env.jwt.secret}") String secretKey,
@@ -35,6 +34,9 @@ public class JwtServiceImpl implements JwtService
     }
 
     public String generateAuthenticationToken(User user) {
+        Instant now = Instant.now();
+        Instant authTokenExpiry = now.plus(authTokenExpiryHours, ChronoUnit.HOURS);
+        
         return Jwts.builder()
                 .header().add("typ", "access")
                 .and()
@@ -48,6 +50,9 @@ public class JwtServiceImpl implements JwtService
     }
 
     public String generateRefreshToken(User user) {
+        Instant now = Instant.now();
+        Instant refreshTokenExpiry = now.plus(refreshTokenExpiryHours, ChronoUnit.HOURS);
+        
         return Jwts.builder()
                 .header().add("typ", "refresh")
                 .and()
@@ -61,6 +66,9 @@ public class JwtServiceImpl implements JwtService
 
     public String generatePayloadToken(User user, Claims claims)
     {
+        Instant now = Instant.now();
+        Instant refreshTokenExpiry = now.plus(refreshTokenExpiryHours, ChronoUnit.HOURS);
+        
         return Jwts.builder()
                 .header().add("typ", "payload")
                 .and()
@@ -90,12 +98,11 @@ public class JwtServiceImpl implements JwtService
     {
         try
         {
-            return extractClaim(token, Claims::getExpiration).before(Date.from(now));
+            return extractClaim(token, Claims::getExpiration).before(Date.from(Instant.now()));
         }
         catch (ExpiredJwtException e)
         {
-            //Throw exception
-            return false;
+            return true;
         }
     }
 

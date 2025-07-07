@@ -1,5 +1,7 @@
 package com.grd.gradingbe.utilities;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.grd.gradingbe.dto.response.ErrorResponse;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.JwtService;
@@ -7,14 +9,17 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -36,39 +41,82 @@ public class JwtFilter extends OncePerRequestFilter
             @NonNull FilterChain chain
     ) throws ServletException, IOException
     {
-        if (request.getServletPath().startsWith("/api/auth/login")
-                || request.getServletPath().startsWith("/api/auth/register")
-                || request.getServletPath().startsWith("/api/auth/reset-password")
-                || request.getServletPath().startsWith("/api/auth/forgot-password"))
+        // Skip JWT validation for public auth endpoints
+        if (isPublicEndpoint(request.getServletPath()))
         {
             chain.doFilter(request, response);
             return;
         }
 
         String token = extractToken(request);
-        if (token == null || !jwtService.validateToken(token) || jwtService.isTokenExpired(token))
+        
+        // Check if token exists
+        if (token == null)
         {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"Invalid or missing JWT token\"}");
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Missing JWT token");
             return;
         }
 
-        Integer userId = jwtService.extractClaim(token, claims -> Integer.parseInt(claims.getSubject()));
-        User user = userRepository.findById(userId).orElse(null);
-        if (user == null)
+        // Validate token format and signature
+        if (!jwtService.validateToken(token))
         {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"User not found\"}");
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
             return;
         }
 
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+        // Check if token is expired
+        if (jwtService.isTokenExpired(token))
+        {
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "JWT token has expired");
+            return;
+        }
+
+        // Extract user ID and fetch user
+        try {
+            Integer userId = jwtService.extractClaim(token, claims -> Integer.parseInt(claims.getSubject()));
+            User user = userRepository.findById(userId).orElse(null);
+            
+            if (user == null)
+            {
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "User not found");
+                return;
+            }
+
+            // Create authentication token
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+            );
+            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            
+            chain.doFilter(request, response);
+        } catch (Exception e) {
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid token format");
+        }
+    }
+
+    private boolean isPublicEndpoint(String path) {
+        return path.startsWith("/api/auth/login") ||
+               path.startsWith("/api/auth/register") ||
+               path.startsWith("/api/auth/refresh") ||
+               path.startsWith("/api/auth/reset-password") ||
+               path.startsWith("/api/auth/forgot-password");
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        ErrorResponse errorResponse = new ErrorResponse(
+                "uri=/api/request",
+                HttpStatus.valueOf(status),
+                message,
+                LocalDateTime.now()
         );
-        SecurityContextHolder.getContext().setAuthentication(auth);
-        chain.doFilter(request, response);
+
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.writeValue(response.getWriter(), errorResponse);
     }
 
     private String extractToken(HttpServletRequest request)

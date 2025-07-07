@@ -46,32 +46,63 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ProblemDetail handleGlobalException(Exception exception) {
-        ProblemDetail errorDetail = null;
-
+    public ResponseEntity<ErrorResponse> handleGlobalException(Exception exception, WebRequest webRequest) {
         exception.printStackTrace();
 
+        ErrorResponse errorResponse;
+        HttpStatus status;
+
         if (exception instanceof BadCredentialsException) {
-            errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(401), exception.getMessage());
-            errorDetail.setProperty("description", "The username or password is incorrect");
+            status = HttpStatus.UNAUTHORIZED;
+            errorResponse = new ErrorResponse(
+                    webRequest.getDescription(false),
+                    status,
+                    "The username or password is incorrect",
+                    LocalDateTime.now()
+            );
         } else if (exception instanceof AccountStatusException) {
-            errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(403), exception.getMessage());
-            errorDetail.setProperty("description", "The account is locked");
+            status = HttpStatus.FORBIDDEN;
+            errorResponse = new ErrorResponse(
+                    webRequest.getDescription(false),
+                    status,
+                    "The account is locked",
+                    LocalDateTime.now()
+            );
         } else if (exception instanceof AccessDeniedException) {
-            errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(403), exception.getMessage());
-            errorDetail.setProperty("description", "You are not authorized to access this resource");
+            status = HttpStatus.FORBIDDEN;
+            errorResponse = new ErrorResponse(
+                    webRequest.getDescription(false),
+                    status,
+                    "You are not authorized to access this resource",
+                    LocalDateTime.now()
+            );
         } else if (exception instanceof SignatureException) {
-            errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(403), exception.getMessage());
-            errorDetail.setProperty("description", "The JWT signature is invalid");
+            status = HttpStatus.UNAUTHORIZED;
+            errorResponse = new ErrorResponse(
+                    webRequest.getDescription(false),
+                    status,
+                    "The JWT signature is invalid",
+                    LocalDateTime.now()
+            );
         } else if (exception instanceof ExpiredJwtException) {
-            errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(403), exception.getMessage());
-            errorDetail.setProperty("description", "The JWT token has expired");
+            status = HttpStatus.UNAUTHORIZED;
+            errorResponse = new ErrorResponse(
+                    webRequest.getDescription(false),
+                    status,
+                    "The JWT token has expired",
+                    LocalDateTime.now()
+            );
         } else {
-            errorDetail = ProblemDetail.forStatusAndDetail(HttpStatusCode.valueOf(500), exception.getMessage());
-            errorDetail.setProperty("description", "Unknown internal server error.");
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+            errorResponse = new ErrorResponse(
+                    webRequest.getDescription(false),
+                    status,
+                    "Unknown internal server error.",
+                    LocalDateTime.now()
+            );
         }
 
-        return errorDetail;
+        return new ResponseEntity<>(errorResponse, status);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)

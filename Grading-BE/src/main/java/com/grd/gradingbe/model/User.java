@@ -61,4 +61,29 @@ public class User implements UserDetails {
         return this.password_hash;
     }
 
+    @Override
+    public String getUsername() {
+        return this.username;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return this.is_active == null || this.is_active;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.is_active == null || this.is_active;
+    }
+
 }

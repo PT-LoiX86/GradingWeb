@@ -4,6 +4,7 @@ import com.grd.gradingbe.dto.request.LoginRequest;
 import com.grd.gradingbe.dto.request.RegisterRequest;
 import com.grd.gradingbe.enums.Role;
 import com.grd.gradingbe.exception.ResourceAlreadyExistException;
+import com.grd.gradingbe.exception.ResourceNotFoundException;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.AuthService;
@@ -89,6 +90,24 @@ public class AuthServiceImpl implements AuthService
         return Map.of(
                 "accessToken", accessToken,
                 "refreshToken", refreshToken
+        );
+    }
+
+    public Map<String, String> refreshToken(String refreshToken) {
+        if (refreshToken == null || !jwtService.validateToken(refreshToken) || jwtService.isTokenExpired(refreshToken)) {
+            throw new IllegalArgumentException("Invalid or expired refresh token");
+        }
+
+        Integer userId = jwtService.extractClaim(refreshToken, claims -> Integer.parseInt(claims.getSubject()));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
+
+        String newAccessToken = jwtService.generateAuthenticationToken(user);
+        String newRefreshToken = jwtService.generateRefreshToken(user);
+
+        return Map.of(
+                "accessToken", newAccessToken,
+                "refreshToken", newRefreshToken
         );
     }
 }

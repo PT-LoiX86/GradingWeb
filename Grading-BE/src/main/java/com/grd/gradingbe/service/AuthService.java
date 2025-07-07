@@ -9,4 +9,5 @@ public interface AuthService
 {
     Map<String, String> login(LoginRequest request);
     Map<String, String> register(RegisterRequest request);
+    Map<String, String> refreshToken(String refreshToken);
 }
