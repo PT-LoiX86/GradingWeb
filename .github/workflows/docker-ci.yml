@@ -7,7 +7,7 @@ on:
     branches: [ "docker-ci", "main" ]
 
 env:
-  DOCKERHUB_USERNAME: ${{ env.DOCKERHUB_USERNAME }}
+  DOCKERHUB_USERNAME: ptloi86
   BACKEND_IMAGE_NAME: grading-be
   FRONTEND_IMAGE_NAME: grading-fe
 
