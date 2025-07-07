@@ -73,7 +73,7 @@ public class AuthServiceImpl implements AuthService
                                     .email(request.getEmail())
                                     .role(userRepository.findUserByRole(Role.ADMIN).isPresent()
                                             ? Role.USER : Role.ADMIN)
-                                    .full_name(request.getFull_name())
+                                    .full_name(request.getFullName())
                                     .updated_at(LocalDateTime.now())
                                     .created_at(LocalDateTime.now())
                                     .build());

@@ -1,6 +1,7 @@
 package com.grd.gradingbe.exception;
 
 import com.grd.gradingbe.dto.response.ErrorResponse;
+import com.grd.gradingbe.dto.response.ValidationErrorResponse;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.http.*;
 import org.springframework.security.authentication.AccountStatusException;
@@ -32,7 +33,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             String validationMsg = error.getDefaultMessage();
             validationErrors.put(fieldName, validationMsg);
         });
-        return new ResponseEntity<>(validationErrors, HttpStatus.BAD_REQUEST);
+
+        ValidationErrorResponse errorResponse = new ValidationErrorResponse(
+                request.getDescription(false),
+                HttpStatus.BAD_REQUEST,
+                "Validation failed for one or more fields",
+                validationErrors,
+                LocalDateTime.now()
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)

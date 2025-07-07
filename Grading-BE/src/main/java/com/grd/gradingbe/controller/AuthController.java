@@ -3,11 +3,12 @@ package com.grd.gradingbe.controller;
 import com.grd.gradingbe.dto.request.LoginRequest;
 import com.grd.gradingbe.dto.request.RegisterRequest;
 import com.grd.gradingbe.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(path = "api/auth")
+@RequestMapping(path = "/api/auth")
 public class AuthController
 {
     private final AuthService authService;
@@ -18,13 +19,13 @@ public class AuthController
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login (@RequestBody LoginRequest request)
+    public ResponseEntity<?> login (@Valid @RequestBody LoginRequest request)
     {
         return ResponseEntity.ok(authService.login(request));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request)
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request)
     {
         return ResponseEntity.ok(authService.register(request));
     }
