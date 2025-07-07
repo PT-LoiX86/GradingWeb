@@ -86,7 +86,14 @@ public class SecurityConfig
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/**")
+                        .requestMatchers("/api/auth/**",
+                                        "/api/public/**",
+                                        "/actuator/**",
+                                        "/webjars/**",
+                                        "/swagger-resources/**",
+                                        "/v3/api-docs/**",
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html")
                         .permitAll()
 
                         .requestMatchers("/api/admin/**")

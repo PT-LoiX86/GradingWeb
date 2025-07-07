@@ -27,11 +27,13 @@ public class JwtFilter extends OncePerRequestFilter
 {
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
-    public JwtFilter(JwtService jwtService, UserRepository userRepository)
+    public JwtFilter(JwtService jwtService, UserRepository userRepository, ObjectMapper objectMapper)
     {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -41,8 +43,10 @@ public class JwtFilter extends OncePerRequestFilter
             @NonNull FilterChain chain
     ) throws ServletException, IOException
     {
+        String path = request.getServletPath();
+        
         // Skip JWT validation for public auth endpoints
-        if (isPublicEndpoint(request.getServletPath()))
+        if (isPublicEndpoint(path))
         {
             chain.doFilter(request, response);
             return;
@@ -95,12 +99,41 @@ public class JwtFilter extends OncePerRequestFilter
         }
     }
 
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+
+        boolean shouldSkip = path.startsWith("/api/auth/") ||
+               path.startsWith("/api/public/") ||
+               path.startsWith("/actuator") ||
+               path.equals("/actuator") ||
+               path.startsWith("/webjars/") ||
+               path.startsWith("/swagger-resources/") ||
+               path.startsWith("/v3/api-docs") ||
+               path.startsWith("/swagger-ui") ||
+               path.equals("/swagger-ui.html") ||
+               path.equals("/") ||
+               path.startsWith("/error") ||
+               path.equals("/favicon.ico");
+               
+        return shouldSkip;
+    }
+
     private boolean isPublicEndpoint(String path) {
-        return path.startsWith("/api/auth/login") ||
-               path.startsWith("/api/auth/register") ||
-               path.startsWith("/api/auth/refresh") ||
-               path.startsWith("/api/auth/reset-password") ||
-               path.startsWith("/api/auth/forgot-password");
+        boolean isPublic = path.startsWith("/api/auth/") ||
+               path.startsWith("/api/public/") ||
+               path.startsWith("/actuator") ||
+               path.equals("/actuator") ||
+               path.startsWith("/webjars/") ||
+               path.startsWith("/swagger-resources/") ||
+               path.startsWith("/v3/api-docs") ||
+               path.startsWith("/swagger-ui") ||
+               path.equals("/swagger-ui.html") ||
+               path.equals("/") ||
+               path.startsWith("/error") ||
+               path.equals("/favicon.ico");
+               
+        return isPublic;
     }
 
     private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
@@ -115,7 +148,6 @@ public class JwtFilter extends OncePerRequestFilter
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         
-        ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.writeValue(response.getWriter(), errorResponse);
     }
 

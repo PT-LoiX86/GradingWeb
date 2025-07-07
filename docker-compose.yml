@@ -39,7 +39,7 @@ services:
   redis:
     image: redis
     container_name: redis
-    restart: unless-stopped
+    restart: always
     ports:
       - "6379:6379"
     healthcheck:
