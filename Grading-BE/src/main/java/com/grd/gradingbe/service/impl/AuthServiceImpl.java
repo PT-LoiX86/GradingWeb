@@ -2,6 +2,7 @@ package com.grd.gradingbe.service.impl;
 
 import com.grd.gradingbe.dto.request.LoginRequest;
 import com.grd.gradingbe.dto.request.RegisterRequest;
+import com.grd.gradingbe.enums.AuthenticationType;
 import com.grd.gradingbe.enums.Role;
 import com.grd.gradingbe.exception.ResourceAlreadyExistException;
 import com.grd.gradingbe.exception.ResourceManagementException;
@@ -93,6 +94,7 @@ public class AuthServiceImpl implements AuthService
                                     .full_name(request.getFull_name())
                                     .updated_at(LocalDateTime.now())
                                     .created_at(LocalDateTime.now())
+                                    .authType(AuthenticationType.LOCAL)
                                     .build());
         }
         catch (DataAccessException e)

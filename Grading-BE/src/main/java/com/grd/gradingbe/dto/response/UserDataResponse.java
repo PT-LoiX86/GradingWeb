@@ -1,5 +1,6 @@
 package com.grd.gradingbe.dto.response;
 
+import com.grd.gradingbe.enums.AuthenticationType;
 import com.grd.gradingbe.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +27,8 @@ public class UserDataResponse
     private String phone;
 
     private String avatar_url;
+
+    private AuthenticationType authType;
 
     private LocalDateTime created_at;
 

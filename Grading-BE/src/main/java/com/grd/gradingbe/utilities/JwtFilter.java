@@ -1,6 +1,6 @@
 package com.grd.gradingbe.utilities;
 
-import com.grd.gradingbe.enums.TokenTypes;
+import com.grd.gradingbe.enums.TokenType;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.JwtService;
@@ -69,7 +69,7 @@ public class JwtFilter extends OncePerRequestFilter
             response.getWriter().write("{\"errorMessage\": \"Token is invalid\"}");
             return;
         }
-        else if (jwtService.isTokenExpired(TokenTypes.ACCESS, token))
+        else if (jwtService.isTokenExpired(TokenType.ACCESS, token))
         {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
@@ -77,7 +77,7 @@ public class JwtFilter extends OncePerRequestFilter
             return;
         }
 
-        Integer userId = jwtService.extractClaim(TokenTypes.ACCESS ,token, claims -> Integer.parseInt(claims.getSubject()));
+        Integer userId = jwtService.extractClaim(TokenType.ACCESS ,token, claims -> Integer.parseInt(claims.getSubject()));
         User user = userRepository.findById(userId).orElse(null);
 
         if (user == null)

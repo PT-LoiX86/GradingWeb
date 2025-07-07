@@ -1,6 +1,6 @@
 package com.grd.gradingbe.enums;
 
-public enum TokenTypes
+public enum TokenType
 {
     ACCESS,
     REFRESH,

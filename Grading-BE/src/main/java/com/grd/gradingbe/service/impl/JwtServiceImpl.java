@@ -1,6 +1,6 @@
 package com.grd.gradingbe.service.impl;
 
-import com.grd.gradingbe.enums.TokenTypes;
+import com.grd.gradingbe.enums.TokenType;
 import com.grd.gradingbe.exception.JwtManagementException;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.service.JwtService;
@@ -54,7 +54,7 @@ public class JwtServiceImpl implements JwtService
         }
         catch (RuntimeException e)
         {
-            throw new JwtManagementException(TokenTypes.ACCESS, "Generating token", "Failed to generate access token");
+            throw new JwtManagementException(TokenType.ACCESS, "Generating token", "Failed to generate access token");
         }
     }
 
@@ -74,7 +74,7 @@ public class JwtServiceImpl implements JwtService
         }
         catch (RuntimeException e)
         {
-            throw new JwtManagementException(TokenTypes.REFRESH, "Generating token", "Failed to generate refresh token");
+            throw new JwtManagementException(TokenType.REFRESH, "Generating token", "Failed to generate refresh token");
         }
     }
 
@@ -95,7 +95,7 @@ public class JwtServiceImpl implements JwtService
         }
         catch (RuntimeException e)
         {
-            throw new JwtManagementException(TokenTypes.PAYLOAD, "Generating token", "Failed to generate payload token");
+            throw new JwtManagementException(TokenType.PAYLOAD, "Generating token", "Failed to generate payload token");
         }
     }
 
@@ -115,7 +115,7 @@ public class JwtServiceImpl implements JwtService
         }
     }
 
-    public boolean isTokenExpired(TokenTypes type, String token)
+    public boolean isTokenExpired(TokenType type, String token)
     {
         try
         {
@@ -127,13 +127,13 @@ public class JwtServiceImpl implements JwtService
         }
     }
 
-    public <T> T extractClaim(TokenTypes type, String token, Function<Claims, T> claimsResolver)
+    public <T> T extractClaim(TokenType type, String token, Function<Claims, T> claimsResolver)
     {
         final Claims claims = extractAllClaims(type, token);
         return claimsResolver.apply(claims);
     }
 
-    public Claims extractAllClaims(TokenTypes type, String token)
+    public Claims extractAllClaims(TokenType type, String token)
     {
         try
         {

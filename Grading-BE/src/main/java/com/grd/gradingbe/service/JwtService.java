@@ -1,6 +1,6 @@
 package com.grd.gradingbe.service;
 
-import com.grd.gradingbe.enums.TokenTypes;
+import com.grd.gradingbe.enums.TokenType;
 import com.grd.gradingbe.model.User;
 import io.jsonwebtoken.Claims;
 
@@ -12,6 +12,6 @@ public interface JwtService
     String generateRefreshToken(User user);
     String generatePayloadToken(User user, Claims claims);
     boolean validateToken(String token);
-    boolean isTokenExpired(TokenTypes type, String token);
-    <T> T extractClaim(TokenTypes type, String token, Function<Claims, T> claimsResolver);
+    boolean isTokenExpired(TokenType type, String token);
+    <T> T extractClaim(TokenType type, String token, Function<Claims, T> claimsResolver);
 }

@@ -1,5 +1,6 @@
 package com.grd.gradingbe.utilities;
 
+import com.grd.gradingbe.enums.AuthenticationType;
 import com.grd.gradingbe.enums.Role;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
@@ -61,6 +62,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler
                                     .full_name(name)
                                     .updated_at(LocalDateTime.now())
                                     .created_at(LocalDateTime.now())
+                                    .authType(AuthenticationType.GOOGLE)
                                     .build()));
         }
         catch (DataAccessException e)

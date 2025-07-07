@@ -1,7 +1,7 @@
 package com.grd.gradingbe.service.impl;
 
 import com.grd.gradingbe.dto.response.UserDataResponse;
-import com.grd.gradingbe.enums.TokenTypes;
+import com.grd.gradingbe.enums.TokenType;
 import com.grd.gradingbe.exception.ResourceNotFoundException;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
@@ -26,7 +26,7 @@ public class UserServiceImpl implements UserService
     {
         String token = extractToken(header);
 
-        Integer userId = Integer.parseInt(jwtService.extractClaim(TokenTypes.ACCESS, token, Claims::getSubject));
+        Integer userId = Integer.parseInt(jwtService.extractClaim(TokenType.ACCESS, token, Claims::getSubject));
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
@@ -38,6 +38,7 @@ public class UserServiceImpl implements UserService
                 .phone(user.getPhone())
                 .email(user.getEmail())
                 .avatar_url(user.getAvatar_url())
+                .authType(user.getAuthType())
                 .updated_at(user.getUpdated_at())
                 .created_at(user.getCreated_at())
                 .build());
