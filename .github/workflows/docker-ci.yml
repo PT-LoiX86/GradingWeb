@@ -2,9 +2,9 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "docker-ci"]
+    branches: [ "docker-ci", "main"]
   pull_request:
-    branches: [ "docker-ci" ]
+    branches: [ "docker-ci", "main"]
 
 env:
   DOCKERHUB_USERNAME: ptloi86
