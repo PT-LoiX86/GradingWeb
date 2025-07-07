@@ -1,5 +1,6 @@
 package com.grd.gradingbe.configuration;
 
+import com.grd.gradingbe.utilities.CustomAccessDeniedHandler;
 import com.grd.gradingbe.utilities.JwtFilter;
 import com.grd.gradingbe.utilities.OAuth2LoginSuccessHandler;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +14,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -44,6 +46,12 @@ public class SecurityConfig
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception
     {
         return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler()
+    {
+        return new CustomAccessDeniedHandler();
     }
 
     @Bean
@@ -81,6 +89,7 @@ public class SecurityConfig
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2LoginSuccessHandler)
                 )
+                .exceptionHandling((exception)-> exception.accessDeniedHandler(accessDeniedHandler()))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         return http.build();

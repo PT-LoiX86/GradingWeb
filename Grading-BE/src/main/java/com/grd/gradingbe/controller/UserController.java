@@ -1,6 +1,5 @@
 package com.grd.gradingbe.controller;
 
-import com.grd.gradingbe.dto.request.RegisterRequest;
 import com.grd.gradingbe.dto.response.UserDataResponse;
 import com.grd.gradingbe.service.UserService;
 import org.springframework.http.ResponseEntity;

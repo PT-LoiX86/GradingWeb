@@ -1,5 +1,6 @@
 package com.grd.gradingbe.service.impl;
 
+import com.grd.gradingbe.exception.ResourceNotFoundException;
 import com.grd.gradingbe.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -20,7 +21,7 @@ public class CustomUserDetailsService implements UserDetailsService
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException
     {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "Username", username));
     }
 }
 

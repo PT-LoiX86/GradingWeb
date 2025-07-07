@@ -40,7 +40,10 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler
         String email = (String) attributes.get("email");
         if (email == null || email.isEmpty())
         {
-            throw new IllegalStateException("Google account did not provide an email address.");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"errorMessage\": \"ID token is not containing email\"}");
+            return;
         }
         String name = (String) attributes.getOrDefault("name", "");
         String picture = (String) attributes.getOrDefault("picture", "");
@@ -62,7 +65,10 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler
         }
         catch (DataAccessException e)
         {
-            throw new IllegalStateException("Failed to save user to the database.", e);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write(String.format("{\"errorMessage\": \"Can not get or save user with email: %s\"}", email));
+            return;
         }
 
         String accessToken = jwtService.generateAuthenticationToken(user);

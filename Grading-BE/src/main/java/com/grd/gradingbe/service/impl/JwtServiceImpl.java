@@ -1,5 +1,7 @@
 package com.grd.gradingbe.service.impl;
 
+import com.grd.gradingbe.enums.TokenTypes;
+import com.grd.gradingbe.exception.JwtManagementException;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.service.JwtService;
 import io.jsonwebtoken.Claims;
@@ -34,83 +36,116 @@ public class JwtServiceImpl implements JwtService
         this.serverIss = serverIss;
     }
 
-    public String generateAuthenticationToken(User user) {
-        return Jwts.builder()
-                .header().add("typ", "access")
-                .and()
-                .claim("role", user.getRole().toString())
-                .issuer(serverIss)
-                .subject(user.getId().toString())
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(authTokenExpiry))
-                .signWith(key, Jwts.SIG.HS256)
-                .compact();
+    public String generateAuthenticationToken(User user)
+    {
+        System.out.println(user.getRole().toString());
+        try
+        {
+            return Jwts.builder()
+                    .header().add("typ", "access")
+                    .and()
+                    .claim("role", user.getRole().toString())
+                    .issuer(serverIss)
+                    .subject(user.getId().toString())
+                    .issuedAt(Date.from(now))
+                    .expiration(Date.from(authTokenExpiry))
+                    .signWith(key, Jwts.SIG.HS512)
+                    .compact();
+        }
+        catch (RuntimeException e)
+        {
+            throw new JwtManagementException(TokenTypes.ACCESS, "Generating token", "Failed to generate access token");
+        }
     }
 
-    public String generateRefreshToken(User user) {
-        return Jwts.builder()
-                .header().add("typ", "refresh")
-                .and()
-                .issuer(serverIss)
-                .subject(user.getId().toString())
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(refreshTokenExpiry))
-                .signWith(key, Jwts.SIG.HS256)
-                .compact();
+    public String generateRefreshToken(User user)
+    {
+        try
+        {
+            return Jwts.builder()
+                    .header().add("typ", "refresh")
+                    .and()
+                    .issuer(serverIss)
+                    .subject(user.getId().toString())
+                    .issuedAt(Date.from(now))
+                    .expiration(Date.from(refreshTokenExpiry))
+                    .signWith(key, Jwts.SIG.HS512)
+                    .compact();
+        }
+        catch (RuntimeException e)
+        {
+            throw new JwtManagementException(TokenTypes.REFRESH, "Generating token", "Failed to generate refresh token");
+        }
     }
 
     public String generatePayloadToken(User user, Claims claims)
     {
-        return Jwts.builder()
-                .header().add("typ", "payload")
-                .and()
-                .claims(claims)
-                .issuer(serverIss)
-                .subject(user.getId().toString())
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(refreshTokenExpiry))
-                .signWith(key, Jwts.SIG.HS256)
-                .compact();
+        try
+        {
+            return Jwts.builder()
+                    .header().add("typ", "payload")
+                    .and()
+                    .claims(claims)
+                    .issuer(serverIss)
+                    .subject(user.getId().toString())
+                    .issuedAt(Date.from(now))
+                    .expiration(Date.from(refreshTokenExpiry))
+                    .signWith(key, Jwts.SIG.HS512)
+                    .compact();
+        }
+        catch (RuntimeException e)
+        {
+            throw new JwtManagementException(TokenTypes.PAYLOAD, "Generating token", "Failed to generate payload token");
+        }
     }
 
     public boolean validateToken(String token)
     {
-        try {
+        try
+        {
             Jwts.parser()
                     .verifyWith(key)
                     .build()
                     .parseSignedClaims(token);
             return true;
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             return false;
         }
     }
 
-    public boolean isTokenExpired(String token)
+    public boolean isTokenExpired(TokenTypes type, String token)
     {
         try
         {
-            return extractClaim(token, Claims::getExpiration).before(Date.from(now));
+            return extractClaim(type,token, Claims::getExpiration).before(Date.from(now));
         }
         catch (ExpiredJwtException e)
         {
-            //Throw exception
-            return false;
+            throw new JwtManagementException(type, "Expiration checking", "Failed to validate token expiration");
         }
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver)
+    public <T> T extractClaim(TokenTypes type, String token, Function<Claims, T> claimsResolver)
     {
-        final Claims claims = extractAllClaims(token);
+        final Claims claims = extractAllClaims(type, token);
         return claimsResolver.apply(claims);
     }
 
-    public Claims extractAllClaims(String token)
+    public Claims extractAllClaims(TokenTypes type, String token)
     {
-        return Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try
+        {
+            return Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        }
+        catch (Exception e)
+        {
+            throw new JwtManagementException(type, "Extract claims", "Failed to extract all token claims");
+        }
     }
 }
