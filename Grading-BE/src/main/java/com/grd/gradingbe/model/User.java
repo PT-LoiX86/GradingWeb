@@ -41,7 +41,6 @@ public class User implements UserDetails {
 
     private Boolean is_active;
 
-    @Column(insertable = false, updatable = false)
     private LocalDateTime created_at;
 
     private LocalDateTime updated_at;
@@ -54,6 +53,6 @@ public class User implements UserDetails {
     @Override
     public String getPassword()
     {
-        return "";
+        return this.password_hash;
     }
 }
