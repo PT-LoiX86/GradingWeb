@@ -1,9 +1,9 @@
 package com.grd.gradingbe.controller;
 
 import com.grd.gradingbe.dto.request.LoginRequest;
+import com.grd.gradingbe.dto.request.RegisterRequest;
 import com.grd.gradingbe.service.AuthService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,5 +21,11 @@ public class AuthController
     public ResponseEntity<?> login (@RequestBody LoginRequest request)
     {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request)
+    {
+        return ResponseEntity.ok(authService.register(request));
     }
 }

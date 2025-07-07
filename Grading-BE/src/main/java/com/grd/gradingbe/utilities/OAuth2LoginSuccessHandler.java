@@ -6,6 +6,7 @@ import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
@@ -13,6 +14,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Component
@@ -36,17 +38,33 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler
         Map<String, Object> attributes = getStringObjectMap(authentication);
 
         String email = (String) attributes.get("email");
-        String name = (String) attributes.get("name");
-        String picture = (String) attributes.get("picture");
+        if (email == null || email.isEmpty())
+        {
+            throw new IllegalStateException("Google account did not provide an email address.");
+        }
+        String name = (String) attributes.getOrDefault("name", "");
+        String picture = (String) attributes.getOrDefault("picture", "");
 
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> userRepository.save(
-                        User.builder()
-                                .email(email)
-                                .role(Role.USER)
-                                .avatar_url(picture)
-                                .full_name(name)
-                                .build()));
+        User user;
+        try
+        {
+            user = userRepository.findByEmail(email)
+                    .orElseGet(() -> userRepository.save(
+                            User.builder()
+                                    .email(email)
+                                    .role(userRepository.findUserByRole(Role.ADMIN).isPresent()
+                                            ? Role.USER : Role.ADMIN)
+                                    .avatar_url(picture)
+                                    .full_name(name)
+                                    .updated_at(LocalDateTime.now())
+                                    .created_at(LocalDateTime.now())
+                                    .build()));
+        }
+        catch (DataAccessException e)
+        {
+            throw new IllegalStateException("Failed to save user to the database.", e);
+        }
+
         String accessToken = jwtService.generateAuthenticationToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
 

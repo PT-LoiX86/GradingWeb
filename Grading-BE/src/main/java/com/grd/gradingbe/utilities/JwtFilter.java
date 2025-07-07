@@ -46,7 +46,7 @@ public class JwtFilter extends OncePerRequestFilter
         }
 
         String token = extractToken(request);
-        if (token == null || !jwtService.validateToken(token) || !jwtService.isTokenExpired(token))
+        if (token == null || !jwtService.validateToken(token) || jwtService.isTokenExpired(token))
         {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
