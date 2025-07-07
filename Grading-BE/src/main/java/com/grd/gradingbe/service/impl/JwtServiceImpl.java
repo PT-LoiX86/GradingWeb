@@ -38,6 +38,7 @@ public class JwtServiceImpl implements JwtService
         return Jwts.builder()
                 .header().add("typ", "access")
                 .and()
+                .claim("role", user.getRole().toString())
                 .issuer(serverIss)
                 .subject(user.getId().toString())
                 .issuedAt(Date.from(now))
@@ -72,7 +73,8 @@ public class JwtServiceImpl implements JwtService
                 .compact();
     }
 
-    public boolean validateToken(String token) {
+    public boolean validateToken(String token)
+    {
         try {
             Jwts.parser()
                     .verifyWith(key)
