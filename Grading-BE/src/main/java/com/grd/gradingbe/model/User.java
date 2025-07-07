@@ -1,5 +1,6 @@
 package com.grd.gradingbe.model;
 
+import com.grd.gradingbe.enums.AuthenticationType;
 import com.grd.gradingbe.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -41,6 +42,10 @@ public class User implements UserDetails {
 
     private Boolean is_active;
 
+    @Enumerated(EnumType.STRING)
+    private AuthenticationType authType;
+
+    @Column(insertable = false, updatable = false)
     private LocalDateTime created_at;
 
     private LocalDateTime updated_at;
@@ -55,4 +60,5 @@ public class User implements UserDetails {
     {
         return this.password_hash;
     }
+
 }
