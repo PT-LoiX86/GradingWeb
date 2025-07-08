@@ -2,9 +2,9 @@ package com.grd.gradingbe.service.impl;
 
 import com.grd.gradingbe.dto.request.LoginRequest;
 import com.grd.gradingbe.dto.request.RegisterRequest;
-import com.grd.gradingbe.enums.AuthenticationType;
 import com.grd.gradingbe.enums.Role;
 import com.grd.gradingbe.enums.TokenType;
+import com.grd.gradingbe.exception.JwtManagementException;
 import com.grd.gradingbe.exception.ResourceAlreadyExistException;
 import com.grd.gradingbe.exception.ResourceManagementException;
 import com.grd.gradingbe.exception.ResourceNotFoundException;
@@ -70,19 +70,14 @@ public class AuthServiceImpl implements AuthService
 
     public Map<String, String> register(RegisterRequest request)
     {
-        if (request.getUsername() == null || request.getUsername().isEmpty())
-        {
-            throw new ResourceManagementException("save()", "Username", "Username is null");
-        }
-
         if (userRepository.findByUsername(request.getUsername()).isPresent())
         {
             throw new ResourceAlreadyExistException("Username already exist");
         }
 
-        if (request.getPassword() == null || request.getPassword().isEmpty())
+        if (userRepository.findByEmail(request.getEmail()).isPresent())
         {
-            throw new ResourceManagementException("encode()", "Password", "Password is null");
+            throw new ResourceAlreadyExistException("Email already exist");
         }
 
         User user;
@@ -115,7 +110,7 @@ public class AuthServiceImpl implements AuthService
 
     public Map<String, String> refreshToken(String refreshToken) {
         if (refreshToken == null || !jwtService.validateToken(refreshToken) || jwtService.isTokenExpired(TokenType.REFRESH, refreshToken)) {
-            throw new IllegalArgumentException("Invalid or expired refresh token");
+            throw new JwtManagementException(TokenType.REFRESH, "Authenticate token", "Invalid or expired refresh token");
         }
 
         Integer userId = Integer.parseInt(jwtService.extractClaim(TokenType.REFRESH, refreshToken , Claims::getSubject));

@@ -47,7 +47,7 @@ public class JwtServiceImpl implements JwtService
                 .subject(user.getId().toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(authTokenExpiry))
-                .signWith(key, Jwts.SIG.HS256)
+                .signWith(key, Jwts.SIG.HS512)
                 .compact();
     }
 
@@ -62,7 +62,7 @@ public class JwtServiceImpl implements JwtService
                 .subject(user.getId().toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(refreshTokenExpiry))
-                .signWith(key, Jwts.SIG.HS256)
+                .signWith(key, Jwts.SIG.HS512)
                 .compact();
     }
 
@@ -79,7 +79,7 @@ public class JwtServiceImpl implements JwtService
                 .subject(user.getId().toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(refreshTokenExpiry))
-                .signWith(key, Jwts.SIG.HS256)
+                .signWith(key, Jwts.SIG.HS512)
                 .compact();
     }
 

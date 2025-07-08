@@ -1,5 +1,6 @@
 package com.grd.gradingbe.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.grd.gradingbe.enums.AuthenticationType;
 import com.grd.gradingbe.enums.Role;
 import lombok.AllArgsConstructor;
@@ -30,7 +31,9 @@ public class UserDataResponse
 
     private AuthenticationType authType;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime created_at;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime updated_at;
 }
