@@ -2,12 +2,12 @@ package com.grd.gradingbe.service;
 
 import com.grd.gradingbe.dto.request.LoginRequest;
 import com.grd.gradingbe.dto.request.RegisterRequest;
-
-import java.util.Map;
+import com.grd.gradingbe.dto.response.LoginResponse;
 
 public interface AuthService
 {
-    Map<String, String> login(LoginRequest request);
-    Map<String, String> register(RegisterRequest request);
-    Map<String, String> refreshToken(String refreshToken);
+    LoginResponse login(LoginRequest request);
+    LoginResponse register(RegisterRequest request);
+    LoginResponse refreshToken(String refreshToken);
+    void logout(String refreshToken);
 }
