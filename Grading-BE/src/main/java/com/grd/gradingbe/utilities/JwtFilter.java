@@ -57,15 +57,7 @@ public class JwtFilter extends OncePerRequestFilter
             }
             catch (Exception e)
             {
-                response.setStatus(HttpStatus.BAD_REQUEST.value());
-                response.setContentType("application/json");
-                String errorJson = String.format(
-                        "{\"status\":%d,\"errorMessage\":\"%s\",\"timestamp\":\"%s\"}",
-                        HttpStatus.BAD_REQUEST.value(),
-                        e.getMessage(),
-                        LocalDateTime.now()
-                );
-                response.getWriter().write(errorJson);
+                sendErrorResponse(response, HttpStatus.BAD_REQUEST.value(), e.getMessage());
             }
         }
 

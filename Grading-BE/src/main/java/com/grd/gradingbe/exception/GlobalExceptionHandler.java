@@ -138,17 +138,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(JwtAuthenticationException.class)
-    public ResponseEntity<ErrorResponse> JwtAuthenticationException(JwtAuthenticationException exception, WebRequest webRequest) {
-        ErrorResponse errorResponseDTO = new ErrorResponse(
-                webRequest.getDescription(false),
-                HttpStatus.BAD_REQUEST,
-                exception.getMessage(),
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
-    }
-
     @ExceptionHandler(JwtManagementException.class)
     public ResponseEntity<ErrorResponse> JwtManagementException(JwtManagementException exception, WebRequest webRequest) {
         ErrorResponse errorResponseDTO = new ErrorResponse(

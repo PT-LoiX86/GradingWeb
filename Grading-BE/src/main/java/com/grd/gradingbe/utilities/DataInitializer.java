@@ -1,10 +1,8 @@
-package com.grd.gradingbe.configuration;
+package com.grd.gradingbe.utilities;
 
-import com.grd.gradingbe.dto.request.RegisterRequest;
 import com.grd.gradingbe.enums.Role;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
-import com.grd.gradingbe.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
