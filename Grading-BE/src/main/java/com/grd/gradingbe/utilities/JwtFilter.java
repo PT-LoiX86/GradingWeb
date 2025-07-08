@@ -103,37 +103,26 @@ public class JwtFilter extends OncePerRequestFilter
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getServletPath();
 
-        boolean shouldSkip = path.startsWith("/api/auth/") ||
-               path.startsWith("/api/public/") ||
-               path.startsWith("/actuator") ||
-               path.equals("/actuator") ||
-               path.startsWith("/webjars/") ||
-               path.startsWith("/swagger-resources/") ||
-               path.startsWith("/v3/api-docs") ||
-               path.startsWith("/swagger-ui") ||
-               path.equals("/swagger-ui.html") ||
-               path.equals("/") ||
-               path.startsWith("/error") ||
-               path.equals("/favicon.ico");
-               
-        return shouldSkip;
+        return publicPath(path);
+    }
+
+    private boolean publicPath(String path) {
+
+        return  path.startsWith("/api/auth/") ||
+                path.startsWith("/api/public/") ||
+                path.startsWith("/actuator") ||
+                path.startsWith("/webjars/") ||
+                path.startsWith("/swagger-resources/") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/swagger-ui") ||
+                path.equals("/swagger-ui.html") ||
+                path.equals("/") ||
+                path.startsWith("/error") ||
+                path.equals("/favicon.ico");
     }
 
     private boolean isPublicEndpoint(String path) {
-        boolean isPublic = path.startsWith("/api/auth/") ||
-               path.startsWith("/api/public/") ||
-               path.startsWith("/actuator") ||
-               path.equals("/actuator") ||
-               path.startsWith("/webjars/") ||
-               path.startsWith("/swagger-resources/") ||
-               path.startsWith("/v3/api-docs") ||
-               path.startsWith("/swagger-ui") ||
-               path.equals("/swagger-ui.html") ||
-               path.equals("/") ||
-               path.startsWith("/error") ||
-               path.equals("/favicon.ico");
-               
-        return isPublic;
+        return publicPath(path);
     }
 
     private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
