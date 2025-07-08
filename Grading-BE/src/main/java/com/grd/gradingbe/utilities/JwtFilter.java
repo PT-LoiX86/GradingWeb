@@ -6,6 +6,7 @@ import com.grd.gradingbe.dto.response.ErrorResponse;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.JwtService;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -84,7 +85,7 @@ public class JwtFilter extends OncePerRequestFilter
         }
 
         // Check if token is expired
-        if (jwtService.isTokenExpired(token))
+        if (jwtService.isTokenExpired(TokenType.ACCESS, token))
         {
             sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "JWT token has expired");
             return;
@@ -92,7 +93,7 @@ public class JwtFilter extends OncePerRequestFilter
 
         // Extract user ID and fetch user
         try {
-            Integer userId = jwtService.extractClaim(token, claims -> Integer.parseInt(claims.getSubject()));
+            Integer userId = Integer.valueOf(jwtService.extractClaim(TokenType.ACCESS, token, Claims::getSubject));
             User user = userRepository.findById(userId).orElse(null);
             
             if (user == null)

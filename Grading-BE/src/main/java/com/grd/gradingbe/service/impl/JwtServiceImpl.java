@@ -103,7 +103,7 @@ public class JwtServiceImpl implements JwtService
     {
         try
         {
-            return extractClaim(token, Claims::getExpiration).before(Date.from(Instant.now()));
+            return extractClaim(type, token, Claims::getExpiration).before(Date.from(Instant.now()));
         }
         catch (ExpiredJwtException e)
         {

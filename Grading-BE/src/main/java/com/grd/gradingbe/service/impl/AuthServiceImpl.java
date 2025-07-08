@@ -4,6 +4,7 @@ import com.grd.gradingbe.dto.request.LoginRequest;
 import com.grd.gradingbe.dto.request.RegisterRequest;
 import com.grd.gradingbe.enums.AuthenticationType;
 import com.grd.gradingbe.enums.Role;
+import com.grd.gradingbe.enums.TokenType;
 import com.grd.gradingbe.exception.ResourceAlreadyExistException;
 import com.grd.gradingbe.exception.ResourceManagementException;
 import com.grd.gradingbe.exception.ResourceNotFoundException;
@@ -11,6 +12,7 @@ import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.AuthService;
 import com.grd.gradingbe.service.JwtService;
+import io.jsonwebtoken.Claims;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -112,11 +114,11 @@ public class AuthServiceImpl implements AuthService
     }
 
     public Map<String, String> refreshToken(String refreshToken) {
-        if (refreshToken == null || !jwtService.validateToken(refreshToken) || jwtService.isTokenExpired(refreshToken)) {
+        if (refreshToken == null || !jwtService.validateToken(refreshToken) || jwtService.isTokenExpired(TokenType.REFRESH, refreshToken)) {
             throw new IllegalArgumentException("Invalid or expired refresh token");
         }
 
-        Integer userId = jwtService.extractClaim(refreshToken, claims -> Integer.parseInt(claims.getSubject()));
+        Integer userId = Integer.parseInt(jwtService.extractClaim(TokenType.REFRESH, refreshToken , Claims::getSubject));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
 

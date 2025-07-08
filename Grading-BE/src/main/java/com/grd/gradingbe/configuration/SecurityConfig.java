@@ -63,6 +63,12 @@ public class SecurityConfig
     }
 
     @Bean
+    public AccessDeniedHandler accessDeniedHandler()
+    {
+        return new CustomAccessDeniedHandler();
+    }
+
+    @Bean
     public CorsConfigurationSource corsConfigurationSource()
     {
         CorsConfiguration configuration = new CorsConfiguration();
