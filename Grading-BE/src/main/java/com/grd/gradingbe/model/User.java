@@ -45,7 +45,7 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private AuthenticationType authType;
 
-    @Column(insertable = false, updatable = false)
+    @Column(updatable = false)
     private LocalDateTime created_at;
 
     private LocalDateTime updated_at;

@@ -1,5 +1,7 @@
 package com.grd.gradingbe.service.impl;
 
+import com.grd.gradingbe.enums.TokenType;
+import com.grd.gradingbe.exception.JwtManagementException;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.service.JwtService;
 import io.jsonwebtoken.Claims;
@@ -83,18 +85,21 @@ public class JwtServiceImpl implements JwtService
 
     public boolean validateToken(String token)
     {
-        try {
+        try
+        {
             Jwts.parser()
                     .verifyWith(key)
                     .build()
                     .parseSignedClaims(token);
             return true;
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             return false;
         }
     }
 
-    public boolean isTokenExpired(String token)
+    public boolean isTokenExpired(TokenType type, String token)
     {
         try
         {
@@ -106,18 +111,25 @@ public class JwtServiceImpl implements JwtService
         }
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver)
+    public <T> T extractClaim(TokenType type, String token, Function<Claims, T> claimsResolver)
     {
-        final Claims claims = extractAllClaims(token);
+        final Claims claims = extractAllClaims(type, token);
         return claimsResolver.apply(claims);
     }
 
-    public Claims extractAllClaims(String token)
+    public Claims extractAllClaims(TokenType type, String token)
     {
-        return Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try
+        {
+            return Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        }
+        catch (Exception e)
+        {
+            throw new JwtManagementException(type, "Extract claims", "Failed to extract all token claims");
+        }
     }
 }

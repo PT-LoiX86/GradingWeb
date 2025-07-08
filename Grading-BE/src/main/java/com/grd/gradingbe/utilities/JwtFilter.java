@@ -1,5 +1,6 @@
 package com.grd.gradingbe.utilities;
 
+import com.grd.gradingbe.enums.TokenType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grd.gradingbe.dto.response.ErrorResponse;
 import com.grd.gradingbe.model.User;
@@ -48,12 +49,26 @@ public class JwtFilter extends OncePerRequestFilter
         // Skip JWT validation for public auth endpoints
         if (isPublicEndpoint(path))
         {
-            chain.doFilter(request, response);
-            return;
+            try
+            {
+                chain.doFilter(request, response);
+                return;
+            }
+            catch (Exception e)
+            {
+                response.setStatus(HttpStatus.BAD_REQUEST.value());
+                response.setContentType("application/json");
+                String errorJson = String.format(
+                        "{\"status\":%d,\"errorMessage\":\"%s\",\"timestamp\":\"%s\"}",
+                        HttpStatus.BAD_REQUEST.value(),
+                        e.getMessage(),
+                        LocalDateTime.now()
+                );
+                response.getWriter().write(errorJson);
+            }
         }
 
         String token = extractToken(request);
-        
         // Check if token exists
         if (token == null)
         {
