@@ -68,15 +68,15 @@ public class AuthServiceImpl implements AuthService
         try
         {
             user = userRepository.save(
-                            User.builder()
-                                    .username(request.getUsername())
-                                    .password_hash(passwordEncoder.encode(request.getPassword()))
-                                    .email(request.getEmail())
-                                    .role(Role.USER)
-                                    .full_name(request.getFullName())
-                                    .updated_at(LocalDateTime.now())
-                                    .created_at(LocalDateTime.now())
-                                    .build());
+                User.builder()
+                        .username(request.getUsername())
+                        .password_hash(passwordEncoder.encode(request.getPassword()))
+                        .email(request.getEmail())
+                        .role(Role.USER)
+                        .full_name(request.getFullName())
+                        .updated_at(LocalDateTime.now())
+                        .created_at(LocalDateTime.now())
+                        .build());
         }
         catch (DataAccessException e)
         {
