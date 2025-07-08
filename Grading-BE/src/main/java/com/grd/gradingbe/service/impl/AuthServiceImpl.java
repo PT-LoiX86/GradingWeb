@@ -6,6 +6,7 @@ import com.grd.gradingbe.enums.AuthenticationType;
 import com.grd.gradingbe.enums.Role;
 import com.grd.gradingbe.exception.ResourceAlreadyExistException;
 import com.grd.gradingbe.exception.ResourceManagementException;
+import com.grd.gradingbe.exception.ResourceNotFoundException;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.AuthService;
@@ -86,16 +87,15 @@ public class AuthServiceImpl implements AuthService
         try
         {
             user = userRepository.save(
-                            User.builder()
-                                    .username(request.getUsername())
-                                    .password_hash(passwordEncoder.encode(request.getPassword()))
-                                    .role(userRepository.findUserByRole(Role.ADMIN).isPresent()
-                                            ? Role.USER : Role.ADMIN)
-                                    .full_name(request.getFull_name())
-                                    .updated_at(LocalDateTime.now())
-                                    .created_at(LocalDateTime.now())
-                                    .authType(AuthenticationType.LOCAL)
-                                    .build());
+                User.builder()
+                        .username(request.getUsername())
+                        .password_hash(passwordEncoder.encode(request.getPassword()))
+                        .email(request.getEmail())
+                        .role(Role.USER)
+                        .full_name(request.getFullName())
+                        .updated_at(LocalDateTime.now())
+                        .created_at(LocalDateTime.now())
+                        .build());
         }
         catch (DataAccessException e)
         {
@@ -108,6 +108,24 @@ public class AuthServiceImpl implements AuthService
         return Map.of(
                 "accessToken", accessToken,
                 "refreshToken", refreshToken
+        );
+    }
+
+    public Map<String, String> refreshToken(String refreshToken) {
+        if (refreshToken == null || !jwtService.validateToken(refreshToken) || jwtService.isTokenExpired(refreshToken)) {
+            throw new IllegalArgumentException("Invalid or expired refresh token");
+        }
+
+        Integer userId = jwtService.extractClaim(refreshToken, claims -> Integer.parseInt(claims.getSubject()));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
+
+        String newAccessToken = jwtService.generateAuthenticationToken(user);
+        String newRefreshToken = jwtService.generateRefreshToken(user);
+
+        return Map.of(
+                "accessToken", newAccessToken,
+                "refreshToken", newRefreshToken
         );
     }
 }

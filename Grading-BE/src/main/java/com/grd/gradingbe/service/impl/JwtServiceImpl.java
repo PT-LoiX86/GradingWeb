@@ -24,9 +24,8 @@ public class JwtServiceImpl implements JwtService
     private final SecretKey key;
     private final String serverIss;
 
-    private final Instant now = Instant.now();
-    private final Instant authTokenExpiry = now.plus(7, ChronoUnit.DAYS);
-    private final Instant refreshTokenExpiry = now.plus(30, ChronoUnit.DAYS);
+    private final long authTokenExpiryHours = 7 * 24; // 7 days in hours
+    private final long refreshTokenExpiryHours = 30 * 24; // 30 days in hours
 
 
     public JwtServiceImpl(@Value("${env.jwt.secret}") String secretKey,
@@ -36,67 +35,52 @@ public class JwtServiceImpl implements JwtService
         this.serverIss = serverIss;
     }
 
-    public String generateAuthenticationToken(User user)
-    {
-        System.out.println(user.getRole().toString());
-        try
-        {
-            return Jwts.builder()
-                    .header().add("typ", "access")
-                    .and()
-                    .claim("role", user.getRole().toString())
-                    .issuer(serverIss)
-                    .subject(user.getId().toString())
-                    .issuedAt(Date.from(now))
-                    .expiration(Date.from(authTokenExpiry))
-                    .signWith(key, Jwts.SIG.HS512)
-                    .compact();
-        }
-        catch (RuntimeException e)
-        {
-            throw new JwtManagementException(TokenType.ACCESS, "Generating token", "Failed to generate access token");
-        }
+    public String generateAuthenticationToken(User user) {
+        Instant now = Instant.now();
+        Instant authTokenExpiry = now.plus(authTokenExpiryHours, ChronoUnit.HOURS);
+        
+        return Jwts.builder()
+                .header().add("typ", "access")
+                .and()
+                .claim("role", user.getRole().toString())
+                .issuer(serverIss)
+                .subject(user.getId().toString())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(authTokenExpiry))
+                .signWith(key, Jwts.SIG.HS256)
+                .compact();
     }
 
-    public String generateRefreshToken(User user)
-    {
-        try
-        {
-            return Jwts.builder()
-                    .header().add("typ", "refresh")
-                    .and()
-                    .issuer(serverIss)
-                    .subject(user.getId().toString())
-                    .issuedAt(Date.from(now))
-                    .expiration(Date.from(refreshTokenExpiry))
-                    .signWith(key, Jwts.SIG.HS512)
-                    .compact();
-        }
-        catch (RuntimeException e)
-        {
-            throw new JwtManagementException(TokenType.REFRESH, "Generating token", "Failed to generate refresh token");
-        }
+    public String generateRefreshToken(User user) {
+        Instant now = Instant.now();
+        Instant refreshTokenExpiry = now.plus(refreshTokenExpiryHours, ChronoUnit.HOURS);
+        
+        return Jwts.builder()
+                .header().add("typ", "refresh")
+                .and()
+                .issuer(serverIss)
+                .subject(user.getId().toString())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(refreshTokenExpiry))
+                .signWith(key, Jwts.SIG.HS256)
+                .compact();
     }
 
     public String generatePayloadToken(User user, Claims claims)
     {
-        try
-        {
-            return Jwts.builder()
-                    .header().add("typ", "payload")
-                    .and()
-                    .claims(claims)
-                    .issuer(serverIss)
-                    .subject(user.getId().toString())
-                    .issuedAt(Date.from(now))
-                    .expiration(Date.from(refreshTokenExpiry))
-                    .signWith(key, Jwts.SIG.HS512)
-                    .compact();
-        }
-        catch (RuntimeException e)
-        {
-            throw new JwtManagementException(TokenType.PAYLOAD, "Generating token", "Failed to generate payload token");
-        }
+        Instant now = Instant.now();
+        Instant refreshTokenExpiry = now.plus(refreshTokenExpiryHours, ChronoUnit.HOURS);
+        
+        return Jwts.builder()
+                .header().add("typ", "payload")
+                .and()
+                .claims(claims)
+                .issuer(serverIss)
+                .subject(user.getId().toString())
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(refreshTokenExpiry))
+                .signWith(key, Jwts.SIG.HS256)
+                .compact();
     }
 
     public boolean validateToken(String token)
@@ -119,11 +103,11 @@ public class JwtServiceImpl implements JwtService
     {
         try
         {
-            return extractClaim(type,token, Claims::getExpiration).before(Date.from(now));
+            return extractClaim(token, Claims::getExpiration).before(Date.from(Instant.now()));
         }
         catch (ExpiredJwtException e)
         {
-            throw new JwtManagementException(type, "Expiration checking", "Failed to validate token expiration");
+            return true;
         }
     }
 
