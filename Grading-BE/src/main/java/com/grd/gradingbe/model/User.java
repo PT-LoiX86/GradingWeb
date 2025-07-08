@@ -50,6 +50,8 @@ public class User implements UserDetails {
 
     private LocalDateTime updated_at;
 
+    private Boolean verified;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.name()));

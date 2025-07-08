@@ -35,8 +35,8 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
+            client-id: 1045662898240-ij1s9tkvd1onmeujfv00i34g24lpss45.apps.googleusercontent.com #${GOOGLE_CLIENT_ID}
+            client-secret: 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 #${GOOGLE_CLIENT_SECRET}
             authorization-grant-type: authorization_code
             redirect-uri: ${env.app.backend.base-url}/login/oauth2/code/google
             scope: openid, profile, email
@@ -90,6 +90,7 @@ env:
       oauth2-login-url: ${env.app.backend.base-url}/oauth2/authorization/google
     frontend:
       base-url: http://localhost:5713
+      reset-password: http://localhost:5713/reset-password
   jwt:
     secret: 22bad11769d6d81745473399385273a9b3a4a1b79c80ebd9549c4ad2dced236af529e3a0cc9ad43b1eed3ac810bfd8151434062cafdc188d03b8cada8d6c839e
     issuer: ${env.app.backend.base-url}

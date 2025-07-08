@@ -1,5 +1,6 @@
 package com.grd.gradingbe.utilities;
 
+import com.grd.gradingbe.enums.AuthenticationType;
 import com.grd.gradingbe.enums.Role;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
@@ -27,8 +28,11 @@ public class DataInitializer implements CommandLineRunner {
                     .full_name("Admin User")
                     .email("admin@gmail.com")
                     .role(Role.ADMIN)
+                    .authType(AuthenticationType.LOCAL)
                     .updated_at(LocalDateTime.now())
                     .created_at(LocalDateTime.now())
+                    .verified(true)
+                    .is_active(true)
                     .build());
             log.info("Initialized default admin user in the database.");
         }

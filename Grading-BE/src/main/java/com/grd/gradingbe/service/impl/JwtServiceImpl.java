@@ -1,5 +1,6 @@
 package com.grd.gradingbe.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grd.gradingbe.enums.TokenType;
 import com.grd.gradingbe.exception.JwtManagementException;
 import com.grd.gradingbe.model.User;
@@ -15,7 +16,9 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.Date;
+import java.util.Map;
 import java.util.function.Function;
 
 @Service
@@ -66,10 +69,10 @@ public class JwtServiceImpl implements JwtService
                 .compact();
     }
 
-    public String generatePayloadToken(User user, Claims claims)
+    public String generatePayloadToken(User user, Map<String, Object> claims, long time, ChronoUnit unit)
     {
         Instant now = Instant.now();
-        Instant refreshTokenExpiry = now.plus(refreshTokenExpiryHours, ChronoUnit.HOURS);
+        Instant payloadTokenExpiry = now.plus(time, unit);
         
         return Jwts.builder()
                 .header().add("typ", "payload")
@@ -78,7 +81,7 @@ public class JwtServiceImpl implements JwtService
                 .issuer(serverIss)
                 .subject(user.getId().toString())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(refreshTokenExpiry))
+                .expiration(Date.from(payloadTokenExpiry))
                 .signWith(key, Jwts.SIG.HS512)
                 .compact();
     }
@@ -130,6 +133,24 @@ public class JwtServiceImpl implements JwtService
         catch (Exception e)
         {
             throw new JwtManagementException(type, "Extract claims", "Failed to extract all token claims");
+        }
+    }
+
+    public Map<String, Object> extractHeader(TokenType type, String token)
+    {
+        try
+        {
+            String[] parts = token.split("\\.");
+            String tokenHeader = parts[0];
+            String headerDecoded = new String(Base64.getUrlDecoder().decode(tokenHeader));
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            return mapper.readValue(headerDecoded, Map.class);
+        }
+        catch (Exception e)
+        {
+            throw new JwtManagementException(type, "Extract Header", "Failed to extract token's header");
         }
     }
 }
