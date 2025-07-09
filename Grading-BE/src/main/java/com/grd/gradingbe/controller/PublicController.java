@@ -26,18 +26,4 @@ public class PublicController {
     public ResponseEntity<String> test() {
         return ResponseEntity.ok("Public endpoint works!");
     }
-
-    //Mail sending testing block, remove after completed testing
-    private final MailService mailService;
-    public PublicController(MailService mailService) {
-        this.mailService = mailService;
-    }
-    @GetMapping("/mail/test")
-    public ResponseEntity<String> testMailSending() throws MessagingException {
-        mailService.sendLinkEmail(MailType.REGISTRATION,
-                "phanthanhloi92017@gmail.com",
-                "test",
-                "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-        return ResponseEntity.ok("Check you email!");
-    }
 }

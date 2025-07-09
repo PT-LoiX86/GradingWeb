@@ -5,5 +5,5 @@ import jakarta.mail.MessagingException;
 
 public interface MailService
 {
-    void sendLinkEmail(MailType type, String to, String subject, String link) throws MessagingException;
+    void sendLinkEmail(MailType type, String to, String link) throws MessagingException;
 }

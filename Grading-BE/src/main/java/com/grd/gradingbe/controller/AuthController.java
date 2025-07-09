@@ -1,8 +1,10 @@
 package com.grd.gradingbe.controller;
 
+import com.grd.gradingbe.dto.request.ForgotPasswordRequest;
 import com.grd.gradingbe.dto.request.LoginRequest;
 import com.grd.gradingbe.dto.request.RefreshTokenRequest;
 import com.grd.gradingbe.dto.request.RegisterRequest;
+import com.grd.gradingbe.dto.request.ResetPasswordRequest;
 import com.grd.gradingbe.dto.response.LoginResponse;
 import com.grd.gradingbe.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,6 +39,12 @@ public class AuthController {
         return ResponseEntity.ok(authService.register(request));
     }
 
+    @GetMapping("/register/verify")
+    public ResponseEntity<Map<String, String>> verifyRegistration(@RequestParam String token)
+    {
+        return ResponseEntity.ok(authService.verifyRegistration(token));
+    }
+
     @PostMapping("/refresh")
     @Operation(summary = "Refresh access token", description = "Get new access token using refresh token")
     @ApiResponse(responseCode = "200", description = "Token refreshed successfully")
@@ -51,5 +59,17 @@ public class AuthController {
     public ResponseEntity<String> logout(@Valid @RequestBody RefreshTokenRequest request) {
         authService.logout(request.getRefreshToken());
         return ResponseEntity.ok("Logged out successfully");
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword (@Valid @RequestBody ForgotPasswordRequest request)
+    {
+        return ResponseEntity.ok(authService.forgotPassword(request));
+    }
+
+    @PutMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword (@Valid @RequestBody ResetPasswordRequest request)
+    {
+        return ResponseEntity.ok(authService.resetPassword(request));
     }
 }

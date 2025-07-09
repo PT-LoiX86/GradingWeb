@@ -23,17 +23,21 @@ public class UserDataResponse
 
     private Role role;
 
-    private String full_name;
+    private String fullName;
 
     private String phone;
 
-    private String avatar_url;
+    private String avatarUrl;
 
     private AuthenticationType authType;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
-    private LocalDateTime updated_at;
+    private LocalDateTime updatedAt;
+
+    private Boolean verified;
+
+    private Boolean isActive;
 }

@@ -27,8 +27,11 @@ public class DataInitializer implements CommandLineRunner {
                     .full_name("Admin User")
                     .email("admin@gmail.com")
                     .role(Role.ADMIN)
+                    .authType(AuthenticationType.LOCAL)
                     .updated_at(LocalDateTime.now())
                     .created_at(LocalDateTime.now())
+                    .verified(true)
+                    .is_active(true)
                     .build());
             log.info("Initialized default admin user in the database.");
         }

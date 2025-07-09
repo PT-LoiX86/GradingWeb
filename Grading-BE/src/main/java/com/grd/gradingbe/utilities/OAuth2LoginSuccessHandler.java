@@ -65,6 +65,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler
                                     .updated_at(LocalDateTime.now())
                                     .created_at(LocalDateTime.now())
                                     .authType(AuthenticationType.GOOGLE)
+                                    .verified(true)
+                                    .is_active(true)
                                     .build()));
         }
         catch (DataAccessException e)
