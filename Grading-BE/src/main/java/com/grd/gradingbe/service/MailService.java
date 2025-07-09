@@ -1,6 +1,6 @@
 package com.grd.gradingbe.service;
 
-import com.grd.gradingbe.enums.MailType;
+import com.grd.gradingbe.dto.enums.MailType;
 import jakarta.mail.MessagingException;
 
 public interface MailService

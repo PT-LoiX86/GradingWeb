@@ -2,7 +2,7 @@ package com.grd.gradingbe.service.impl;
 
 import com.grd.gradingbe.dto.request.ChangePasswordRequest;
 import com.grd.gradingbe.dto.response.UserDataResponse;
-import com.grd.gradingbe.enums.TokenType;
+import com.grd.gradingbe.dto.enums.TokenType;
 import com.grd.gradingbe.exception.ArgumentValidationException;
 import com.grd.gradingbe.exception.ResourceManagementException;
 import com.grd.gradingbe.exception.ResourceNotFoundException;

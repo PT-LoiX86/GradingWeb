@@ -1,4 +1,4 @@
-package com.grd.gradingbe.enums;
+package com.grd.gradingbe.dto.enums;
 
 public enum TokenType
 {

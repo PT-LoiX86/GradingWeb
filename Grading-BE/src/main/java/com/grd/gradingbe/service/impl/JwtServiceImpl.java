@@ -1,7 +1,7 @@
 package com.grd.gradingbe.service.impl;
 
+import com.grd.gradingbe.dto.enums.TokenType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.grd.gradingbe.enums.TokenType;
 import com.grd.gradingbe.exception.JwtManagementException;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.service.JwtService;

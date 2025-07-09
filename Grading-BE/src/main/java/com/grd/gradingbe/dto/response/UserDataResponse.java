@@ -1,8 +1,8 @@
 package com.grd.gradingbe.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.grd.gradingbe.enums.AuthenticationType;
-import com.grd.gradingbe.enums.Role;
+import com.grd.gradingbe.dto.enums.AuthenticationType;
+import com.grd.gradingbe.dto.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
