@@ -1,10 +1,6 @@
 package com.grd.gradingbe.controller;
 
-import com.grd.gradingbe.dto.request.ForgotPasswordRequest;
-import com.grd.gradingbe.dto.request.LoginRequest;
-import com.grd.gradingbe.dto.request.RefreshTokenRequest;
-import com.grd.gradingbe.dto.request.RegisterRequest;
-import com.grd.gradingbe.dto.request.ResetPasswordRequest;
+import com.grd.gradingbe.dto.request.*;
 import com.grd.gradingbe.dto.response.LoginResponse;
 import com.grd.gradingbe.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,12 +11,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping(path = "/api/auth")
 @RequiredArgsConstructor
 @Tag(name = "Authentication", description = "Authentication endpoints")
 public class AuthController {
-    
+
     private final AuthService authService;
 
     @PostMapping("/login")
@@ -35,13 +33,12 @@ public class AuthController {
     @Operation(summary = "User registration", description = "Register new user and return access and refresh tokens")
     @ApiResponse(responseCode = "200", description = "Registration successful")
     @ApiResponse(responseCode = "400", description = "Invalid input or user already exists")
-    public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
     }
 
     @GetMapping("/register/verify")
-    public ResponseEntity<Map<String, String>> verifyRegistration(@RequestParam String token)
-    {
+    public ResponseEntity<Map<String, String>> verifyRegistration(@RequestParam String token) {
         return ResponseEntity.ok(authService.verifyRegistration(token));
     }
 
@@ -62,14 +59,12 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<Map<String, String>> forgotPassword (@Valid @RequestBody ForgotPasswordRequest request)
-    {
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         return ResponseEntity.ok(authService.forgotPassword(request));
     }
 
     @PutMapping("/reset-password")
-    public ResponseEntity<Map<String, String>> resetPassword (@Valid @RequestBody ResetPasswordRequest request)
-    {
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         return ResponseEntity.ok(authService.resetPassword(request));
     }
 }

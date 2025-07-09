@@ -12,22 +12,18 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 @Service
-public class MailServiceImpl implements MailService
-{
+public class MailServiceImpl implements MailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
 
-    public MailServiceImpl(JavaMailSender mailSender, TemplateEngine templateEngine)
-    {
+    public MailServiceImpl(JavaMailSender mailSender, TemplateEngine templateEngine) {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
     }
 
     @Async
-    public void sendLinkEmail(MailType type, String to, String link) throws MessagingException
-    {
-        try
-        {
+    public void sendLinkEmail(MailType type, String to, String link) throws MessagingException {
+        try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
@@ -36,8 +32,7 @@ public class MailServiceImpl implements MailService
 
             String htmlContent;
 
-            switch (type)
-            {
+            switch (type) {
                 case MailType.CHANGE_PASSWORD -> {
                     htmlContent = templateEngine.process("change-password-mail-template", context);
                     helper.setSubject("Đổi mật khẩu");
@@ -53,9 +48,7 @@ public class MailServiceImpl implements MailService
             helper.setText(htmlContent, true);
 
             mailSender.send(message);
-        }
-        catch (MessagingException e)
-        {
+        } catch (MessagingException e) {
             throw new MessagingException("Failed to send email", e);
         }
 

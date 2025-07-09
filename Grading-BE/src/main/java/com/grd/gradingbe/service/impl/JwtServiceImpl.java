@@ -81,7 +81,7 @@ public class JwtServiceImpl implements JwtService
                 .issuer(serverIss)
                 .subject(user.getId().toString())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(payloadTokenExpiry))
+                .expiration(Date.from(refreshTokenExpiry))
                 .signWith(key, Jwts.SIG.HS512)
                 .compact();
     }
