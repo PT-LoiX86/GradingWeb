@@ -95,6 +95,7 @@ public class SecurityConfig
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**",
+                                        "/oauth2/**",
                                         "/api/public/**",
                                         "/actuator/**",
                                         "/webjars/**",

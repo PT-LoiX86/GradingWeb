@@ -97,7 +97,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             errorResponse = new ErrorResponse(
                     webRequest.getDescription(false),
                     status,
-                    "Unknown internal server error.",
+                    exception.getMessage() != null ? exception.getMessage() : "Unknown internal server error.",
                     LocalDateTime.now()
             );
         }
@@ -140,6 +140,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(JwtManagementException.class)
     public ResponseEntity<ErrorResponse> JwtManagementException(JwtManagementException exception, WebRequest webRequest) {
+        ErrorResponse errorResponseDTO = new ErrorResponse(
+                webRequest.getDescription(false),
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ArgumentValidationException.class)
+    public ResponseEntity<ErrorResponse> ArgumentValidationException(ArgumentValidationException exception, WebRequest webRequest) {
         ErrorResponse errorResponseDTO = new ErrorResponse(
                 webRequest.getDescription(false),
                 HttpStatus.BAD_REQUEST,

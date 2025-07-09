@@ -24,7 +24,7 @@ public class MailServiceImpl implements MailService
     }
 
     @Async
-    public void sendLinkEmail(MailType type, String to, String subject, String link) throws MessagingException
+    public void sendLinkEmail(MailType type, String to, String link) throws MessagingException
     {
         try
         {
@@ -38,13 +38,18 @@ public class MailServiceImpl implements MailService
 
             switch (type)
             {
-                case MailType.CHANGE_PASSWORD -> htmlContent = templateEngine.process("change-password-mail-template", context);
-                case MailType.REGISTRATION -> htmlContent = templateEngine.process("registration-mail-template", context);
+                case MailType.CHANGE_PASSWORD -> {
+                    htmlContent = templateEngine.process("change-password-mail-template", context);
+                    helper.setSubject("Đổi mật khẩu");
+                }
+                case MailType.REGISTRATION -> {
+                    htmlContent = templateEngine.process("registration-mail-template", context);
+                    helper.setSubject("Xác nhận tài khoản");
+                }
                 default -> throw new IllegalArgumentException("Mail type is not valid");
             }
 
             helper.setTo(to);
-            helper.setSubject(subject);
             helper.setText(htmlContent, true);
 
             mailSender.send(message);

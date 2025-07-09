@@ -70,7 +70,8 @@ public class JwtFilter extends OncePerRequestFilter
         }
 
         // Validate token format and signature
-        if (!jwtService.validateToken(token))
+        if (!jwtService.validateToken(token)
+            && !"access".equals(jwtService.extractHeader(TokenType.ACCESS, token).get("typ")))
         {
             sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
             return;
@@ -117,6 +118,7 @@ public class JwtFilter extends OncePerRequestFilter
     private boolean publicPath(String path) {
 
         return  path.startsWith("/api/auth/") ||
+                path.startsWith("/oauth2/") ||
                 path.startsWith("/api/public/") ||
                 path.startsWith("/actuator") ||
                 path.startsWith("/webjars/") ||
