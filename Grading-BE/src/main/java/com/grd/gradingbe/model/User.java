@@ -1,6 +1,7 @@
 package com.grd.gradingbe.model;
 
-import com.grd.gradingbe.enums.Role;
+import com.grd.gradingbe.dto.enums.AuthenticationType;
+import com.grd.gradingbe.dto.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,10 +42,15 @@ public class User implements UserDetails {
 
     private Boolean is_active;
 
-    @Column(insertable = false, updatable = false)
+    @Enumerated(EnumType.STRING)
+    private AuthenticationType authType;
+
+    @Column(updatable = false)
     private LocalDateTime created_at;
 
     private LocalDateTime updated_at;
+
+    private Boolean verified;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -52,7 +58,34 @@ public class User implements UserDetails {
     }
 
     @Override
-    public String getPassword() {
-        return "";
+    public String getPassword()
+    {
+        return this.password_hash;
     }
+
+    @Override
+    public String getUsername() {
+        return this.username;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return this.is_active == null || this.is_active;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.is_active == null || this.is_active;
+    }
+
 }

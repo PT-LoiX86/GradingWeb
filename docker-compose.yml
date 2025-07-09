@@ -39,7 +39,7 @@ services:
   redis:
     image: redis
     container_name: redis
-    restart: unless-stopped
+    restart: always
     ports:
       - "6379:6379"
     healthcheck:
@@ -48,8 +48,8 @@ services:
       retries: 10
 
   grading-be:
-    image: vietquoc2408/grading-be:0.0.1
-    container_name: bottom-cv
+    image: vietquoc2408/grading-be:latest
+    container_name: grading-be
     restart: always
     ports:
       - "8080:8080"
@@ -61,6 +61,17 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       SERVER_PORT: 8080
+    networks:
+      - grading-network
+
+  grading-fe:
+    image: vietquoc2408/grading-fe:latest
+    container_name: grading-fe
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - grading-be
     networks:
       - grading-network
 

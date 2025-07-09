@@ -1,20 +1,27 @@
 package com.grd.gradingbe.utilities;
 
+import com.grd.gradingbe.dto.enums.TokenType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.grd.gradingbe.dto.response.ErrorResponse;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.JwtService;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -22,11 +29,13 @@ public class JwtFilter extends OncePerRequestFilter
 {
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
-    public JwtFilter(JwtService jwtService, UserRepository userRepository)
+    public JwtFilter(JwtService jwtService, UserRepository userRepository, ObjectMapper objectMapper)
     {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -36,39 +45,109 @@ public class JwtFilter extends OncePerRequestFilter
             @NonNull FilterChain chain
     ) throws ServletException, IOException
     {
-        if (request.getServletPath().startsWith("/api/auth/login")
-                || request.getServletPath().startsWith("/api/auth/register")
-                || request.getServletPath().startsWith("/api/auth/reset-password")
-                || request.getServletPath().startsWith("/api/auth/forgot-password"))
+        String path = request.getServletPath();
+        
+        // Skip JWT validation for public auth endpoints
+        if (isPublicEndpoint(path))
         {
-            chain.doFilter(request, response);
-            return;
+            try
+            {
+                chain.doFilter(request, response);
+                return;
+            }
+            catch (Exception e)
+            {
+                sendErrorResponse(response, HttpStatus.BAD_REQUEST.value(), e.getMessage());
+            }
         }
 
         String token = extractToken(request);
-        if (token == null || !jwtService.validateToken(token) || !jwtService.isTokenExpired(token))
+        // Check if token exists
+        if (token == null)
         {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"Invalid or missing JWT token\"}");
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Missing JWT token");
             return;
         }
 
-        Integer userId = jwtService.extractClaim(token, claims -> Integer.parseInt(claims.getSubject()));
-        User user = userRepository.findById(userId).orElse(null);
-        if (user == null)
+        // Validate token format and signature
+        if (!jwtService.validateToken(token)
+            && !"access".equals(jwtService.extractHeader(TokenType.ACCESS, token).get("typ")))
         {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"User not found\"}");
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
             return;
         }
 
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+        // Check if token is expired
+        if (jwtService.isTokenExpired(TokenType.ACCESS, token))
+        {
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "JWT token has expired");
+            return;
+        }
+
+        // Extract user ID and fetch user
+        try {
+            Integer userId = Integer.valueOf(jwtService.extractClaim(TokenType.ACCESS, token, Claims::getSubject));
+            User user = userRepository.findById(userId).orElse(null);
+            
+            if (user == null)
+            {
+                sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "User not found");
+                return;
+            }
+
+            // Create authentication token
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    userId, null, List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+            );
+            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            
+            chain.doFilter(request, response);
+        } catch (Exception e) {
+            sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid token format");
+        }
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+
+        return publicPath(path);
+    }
+
+    private boolean publicPath(String path) {
+
+        return  path.startsWith("/api/auth/") ||
+                path.startsWith("/oauth2/") ||
+                path.startsWith("/api/public/") ||
+                path.startsWith("/actuator") ||
+                path.startsWith("/webjars/") ||
+                path.startsWith("/swagger-resources/") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/swagger-ui") ||
+                path.equals("/swagger-ui.html") ||
+                path.equals("/") ||
+                path.startsWith("/error") ||
+                path.equals("/favicon.ico");
+    }
+
+    private boolean isPublicEndpoint(String path) {
+        return publicPath(path);
+    }
+
+    private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        ErrorResponse errorResponse = new ErrorResponse(
+                "uri=/api/request",
+                HttpStatus.valueOf(status),
+                message,
+                LocalDateTime.now()
         );
-        SecurityContextHolder.getContext().setAuthentication(auth);
-        chain.doFilter(request, response);
+
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        objectMapper.writeValue(response.getWriter(), errorResponse);
     }
 
     private String extractToken(HttpServletRequest request)
