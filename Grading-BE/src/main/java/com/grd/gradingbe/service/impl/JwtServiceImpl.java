@@ -27,8 +27,8 @@ public class JwtServiceImpl implements JwtService
     private final SecretKey key;
     private final String serverIss;
 
-    private final long authTokenExpiryHours = 7 * 24; // 7 days in hours
-    private final long refreshTokenExpiryHours = 30 * 24; // 30 days in hours
+    private final long authTokenExpiryMinutes = 15; // 15 minutes for access token
+    private final long refreshTokenExpiryDays = 7; // 7 days for refresh token
 
 
     public JwtServiceImpl(@Value("${env.jwt.secret}") String secretKey,
@@ -40,7 +40,7 @@ public class JwtServiceImpl implements JwtService
 
     public String generateAuthenticationToken(User user) {
         Instant now = Instant.now();
-        Instant authTokenExpiry = now.plus(authTokenExpiryHours, ChronoUnit.HOURS);
+        Instant authTokenExpiry = now.plus(authTokenExpiryMinutes, ChronoUnit.MINUTES);
         
         return Jwts.builder()
                 .header().add("typ", "access")
@@ -56,7 +56,7 @@ public class JwtServiceImpl implements JwtService
 
     public String generateRefreshToken(User user) {
         Instant now = Instant.now();
-        Instant refreshTokenExpiry = now.plus(refreshTokenExpiryHours, ChronoUnit.HOURS);
+        Instant refreshTokenExpiry = now.plus(refreshTokenExpiryDays, ChronoUnit.DAYS);
         
         return Jwts.builder()
                 .header().add("typ", "refresh")
@@ -72,7 +72,7 @@ public class JwtServiceImpl implements JwtService
     public String generatePayloadToken(User user, Map<String, Object> claims, long time, ChronoUnit unit)
     {
         Instant now = Instant.now();
-        Instant payloadTokenExpiry = now.plus(time, unit);
+        Instant refreshTokenExpiry = now.plus(refreshTokenExpiryDays, ChronoUnit.DAYS);
         
         return Jwts.builder()
                 .header().add("typ", "payload")
