@@ -1,8 +1,8 @@
 package com.grd.gradingbe.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.grd.gradingbe.enums.AuthenticationType;
-import com.grd.gradingbe.enums.Role;
+import com.grd.gradingbe.dto.enums.AuthenticationType;
+import com.grd.gradingbe.dto.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,17 +23,21 @@ public class UserDataResponse
 
     private Role role;
 
-    private String full_name;
+    private String fullName;
 
     private String phone;
 
-    private String avatar_url;
+    private String avatarUrl;
 
     private AuthenticationType authType;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
-    private LocalDateTime updated_at;
+    private LocalDateTime updatedAt;
+
+    private Boolean verified;
+
+    private Boolean isActive;
 }

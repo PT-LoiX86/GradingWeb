@@ -1,7 +1,7 @@
 package com.grd.gradingbe.model;
 
-import com.grd.gradingbe.enums.AuthenticationType;
-import com.grd.gradingbe.enums.Role;
+import com.grd.gradingbe.dto.enums.AuthenticationType;
+import com.grd.gradingbe.dto.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,6 +49,8 @@ public class User implements UserDetails {
     private LocalDateTime created_at;
 
     private LocalDateTime updated_at;
+
+    private Boolean verified;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

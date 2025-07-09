@@ -48,8 +48,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: gradingwebsite@gmail.com
-    password: yrgxspcdlivikump
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     protocol: smtp
     properties:
       mail:
@@ -90,6 +90,7 @@ env:
       oauth2-login-url: ${env.app.backend.base-url}/oauth2/authorization/google
     frontend:
       base-url: http://localhost:5713
+      reset-password: http://localhost:5713/reset-password
   jwt:
     secret: 22bad11769d6d81745473399385273a9b3a4a1b79c80ebd9549c4ad2dced236af529e3a0cc9ad43b1eed3ac810bfd8151434062cafdc188d03b8cada8d6c839e
     issuer: ${env.app.backend.base-url}

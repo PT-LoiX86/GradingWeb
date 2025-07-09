@@ -1,6 +1,6 @@
 package com.grd.gradingbe.dto.response;
 
-import com.grd.gradingbe.enums.Role;
+import com.grd.gradingbe.dto.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

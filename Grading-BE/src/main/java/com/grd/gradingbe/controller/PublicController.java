@@ -1,8 +1,7 @@
 package com.grd.gradingbe.controller;
 
-import com.grd.gradingbe.enums.MailType;
+import com.grd.gradingbe.dto.enums.MailType;
 import com.grd.gradingbe.service.MailService;
-import com.grd.gradingbe.service.impl.MailServiceImpl;
 import jakarta.mail.MessagingException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,19 +25,5 @@ public class PublicController {
     @GetMapping("/test")
     public ResponseEntity<String> test() {
         return ResponseEntity.ok("Public endpoint works!");
-    }
-
-    //Mail sending testing block, remove after completed testing
-    private final MailService mailService;
-    public PublicController(MailService mailService) {
-        this.mailService = mailService;
-    }
-    @GetMapping("/mail/test")
-    public ResponseEntity<String> testMailSending() throws MessagingException {
-        mailService.sendLinkEmail(MailType.REGISTRATION,
-                "phanthanhloi92017@gmail.com",
-                "test",
-                "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-        return ResponseEntity.ok("Check you email!");
     }
 }

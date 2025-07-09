@@ -2,8 +2,8 @@ package com.grd.gradingbe.utilities;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grd.gradingbe.dto.response.ErrorResponse;
-import com.grd.gradingbe.enums.AuthenticationType;
-import com.grd.gradingbe.enums.Role;
+import com.grd.gradingbe.dto.enums.AuthenticationType;
+import com.grd.gradingbe.dto.enums.Role;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.JwtService;
@@ -65,6 +65,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler
                                     .updated_at(LocalDateTime.now())
                                     .created_at(LocalDateTime.now())
                                     .authType(AuthenticationType.GOOGLE)
+                                    .verified(true)
+                                    .is_active(true)
                                     .build()));
         }
         catch (DataAccessException e)
