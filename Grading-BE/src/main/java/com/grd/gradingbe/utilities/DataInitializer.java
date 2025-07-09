@@ -1,6 +1,6 @@
 package com.grd.gradingbe.utilities;
 
-import com.grd.gradingbe.enums.Role;
+import com.grd.gradingbe.dto.enums.Role;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

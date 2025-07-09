@@ -2,8 +2,8 @@ package com.grd.gradingbe.utilities;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grd.gradingbe.dto.response.ErrorResponse;
-import com.grd.gradingbe.enums.AuthenticationType;
-import com.grd.gradingbe.enums.Role;
+import com.grd.gradingbe.dto.enums.AuthenticationType;
+import com.grd.gradingbe.dto.enums.Role;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.JwtService;

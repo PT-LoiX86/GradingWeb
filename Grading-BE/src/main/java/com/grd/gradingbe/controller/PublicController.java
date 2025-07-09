@@ -1,8 +1,7 @@
 package com.grd.gradingbe.controller;
 
-import com.grd.gradingbe.enums.MailType;
+import com.grd.gradingbe.dto.enums.MailType;
 import com.grd.gradingbe.service.MailService;
-import com.grd.gradingbe.service.impl.MailServiceImpl;
 import jakarta.mail.MessagingException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

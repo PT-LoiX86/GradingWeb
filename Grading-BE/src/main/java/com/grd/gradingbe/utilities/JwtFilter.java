@@ -1,6 +1,6 @@
 package com.grd.gradingbe.utilities;
 
-import com.grd.gradingbe.enums.TokenType;
+import com.grd.gradingbe.dto.enums.TokenType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.grd.gradingbe.dto.response.ErrorResponse;
 import com.grd.gradingbe.model.User;

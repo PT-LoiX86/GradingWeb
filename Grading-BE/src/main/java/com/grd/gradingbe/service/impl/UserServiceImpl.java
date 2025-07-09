@@ -1,7 +1,7 @@
 package com.grd.gradingbe.service.impl;
 
 import com.grd.gradingbe.dto.response.UserDataResponse;
-import com.grd.gradingbe.enums.TokenType;
+import com.grd.gradingbe.dto.enums.TokenType;
 import com.grd.gradingbe.exception.ResourceNotFoundException;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;

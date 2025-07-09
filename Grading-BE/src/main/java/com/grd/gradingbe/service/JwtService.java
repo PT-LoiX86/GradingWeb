@@ -1,6 +1,6 @@
 package com.grd.gradingbe.service;
 
-import com.grd.gradingbe.enums.TokenType;
+import com.grd.gradingbe.dto.enums.TokenType;
 import com.grd.gradingbe.model.User;
 import io.jsonwebtoken.Claims;
 

@@ -1,6 +1,6 @@
 package com.grd.gradingbe.exception;
 
-import com.grd.gradingbe.enums.TokenType;
+import com.grd.gradingbe.dto.enums.TokenType;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
