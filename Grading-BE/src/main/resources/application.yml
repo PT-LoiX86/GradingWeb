@@ -92,7 +92,7 @@ env:
       base-url: http://localhost:5713
       reset-password: http://localhost:5713/reset-password
   jwt:
-    secret: 22bad11769d6d81745473399385273a9b3a4a1b79c80ebd9549c4ad2dced236af529e3a0cc9ad43b1eed3ac810bfd8151434062cafdc188d03b8cada8d6c839e
+    secret: ${JWT_SECRET}
     issuer: ${env.app.backend.base-url}
     refresh-token-validity-days: 7
     max-tokens-per-user: 5
