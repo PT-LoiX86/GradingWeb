@@ -2,11 +2,15 @@ package com.grd.gradingbe.utilities;
 
 import com.grd.gradingbe.dto.enums.AuthenticationType;
 import com.grd.gradingbe.dto.enums.Role;
+import com.grd.gradingbe.model.RefreshToken;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.JwtService;
+import com.grd.gradingbe.service.RefreshTokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.Authentication;
@@ -23,20 +27,16 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler
 {
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final RefreshTokenService refreshTokenService;
     
     @Value("${env.app.frontend.base-url}")
     private String frontendURL;
-
-    public OAuth2LoginSuccessHandler(JwtService jwtService, UserRepository userRepository)
-    {
-        this.jwtService = jwtService;
-        this.userRepository = userRepository;
-    }
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -88,12 +88,12 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler
         }
 
         String accessToken = jwtService.generateAuthenticationToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
         String successRedirectUrl = UriComponentsBuilder.fromHttpUrl(frontendURL)
                 .path("/oauth2/callback")
                 .queryParam("accessToken", accessToken)
-                .queryParam("refreshToken", refreshToken)
+                .queryParam("refreshToken", refreshToken.getToken())
                 .build()
                 .toUriString();
                 
