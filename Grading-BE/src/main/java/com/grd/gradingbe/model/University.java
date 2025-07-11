@@ -18,9 +18,10 @@ public class University extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String code;
 
     private String address;
@@ -33,6 +34,7 @@ public class University extends BaseEntity {
 
     private String logoUrl;
 
+    @Column(length = 500)
     private String description;
 
     @Enumerated(EnumType.STRING)
