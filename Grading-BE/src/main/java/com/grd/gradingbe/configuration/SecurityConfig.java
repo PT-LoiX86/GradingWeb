@@ -3,6 +3,10 @@ package com.grd.gradingbe.configuration;
 import com.grd.gradingbe.utilities.CustomAccessDeniedHandler;
 import com.grd.gradingbe.utilities.JwtFilter;
 import com.grd.gradingbe.utilities.OAuth2LoginSuccessHandler;
+
+import lombok.RequiredArgsConstructor;
+
+import com.grd.gradingbe.utilities.OAuth2LoginFailureHandler;
 import com.grd.gradingbe.service.impl.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -25,18 +29,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig
 {
     private final JwtFilter jwtFilter;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
     private final CustomUserDetailsService userDetailsService;
-
-    public SecurityConfig(JwtFilter jwtFilter, OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler, CustomUserDetailsService userDetailsService)
-    {
-        this.jwtFilter = jwtFilter;
-        this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
-        this.userDetailsService = userDetailsService;
-    }
 
     @Value("${env.app.front-end.base-url}")
     private String frontendURL;
@@ -54,7 +53,6 @@ public class SecurityConfig
     }
 
     @Bean
-    @SuppressWarnings("deprecation")
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
@@ -112,6 +110,7 @@ public class SecurityConfig
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler(oAuth2LoginFailureHandler)
                 )
                 .exceptionHandling((exception)-> exception.accessDeniedHandler(accessDeniedHandler()))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()));

@@ -40,11 +40,14 @@ spring:
             authorization-grant-type: authorization_code
             redirect-uri: ${env.app.backend.base-url}/login/oauth2/code/google
             scope: openid, profile, email
+            client-name: Google
         provider:
           google:
             authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
             token-uri: https://oauth2.googleapis.com/token
-            user-info-uri: https://openidconnect.googleapis.com/v1/
+            user-info-uri: https://openidconnect.googleapis.com/v1/userinfo
+            jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+            user-name-attribute: sub
   mail:
     host: smtp.gmail.com
     port: 587
@@ -92,7 +95,7 @@ env:
       base-url: http://localhost:5713
       reset-password: http://localhost:5713/reset-password
   jwt:
-    secret: 22bad11769d6d81745473399385273a9b3a4a1b79c80ebd9549c4ad2dced236af529e3a0cc9ad43b1eed3ac810bfd8151434062cafdc188d03b8cada8d6c839e
+    secret: ${JWT_SECRET}
     issuer: ${env.app.backend.base-url}
     refresh-token-validity-days: 7
     max-tokens-per-user: 5

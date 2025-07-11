@@ -10,24 +10,26 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "majors")
-public class Major extends BaseEntity {
+@Table(name = "schools")
+public class School extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true)
+    private String code;
+
     @Column(nullable = false)
     private String name;
 
-    @Column(unique = true, nullable = false)
-    private String code;
+    private String address;
 
-    @Column(length = 500)
-    private String description;
+    private String phoneNumber;
 
-    private int durationYears;
+    private String email;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "university_id", nullable = false)
-    private University university;
+    @JoinColumn(name = "province_id", nullable = false)
+    private Province province;
 }
