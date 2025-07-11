@@ -1,6 +1,7 @@
 package com.grd.gradingbe.controller;
 
 import com.grd.gradingbe.dto.request.ChangePasswordRequest;
+import com.grd.gradingbe.dto.request.UpdateUserInfoRequest;
 import com.grd.gradingbe.dto.response.UserDataResponse;
 import com.grd.gradingbe.service.UserService;
 import jakarta.validation.Valid;
@@ -24,6 +25,13 @@ public class UserController
     public ResponseEntity<UserDataResponse> getUserData(@RequestHeader("Authorization") String header)
     {
         return ResponseEntity.ok(userService.getUserData(header));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<UserDataResponse> updateUserInfo(@RequestHeader("Authorization") String header,
+                                                           @Valid @RequestBody UpdateUserInfoRequest request)
+    {
+        return ResponseEntity.ok(userService.updateUserInfo(header, request));
     }
 
     @PutMapping("/change-password")

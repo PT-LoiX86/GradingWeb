@@ -1,6 +1,7 @@
 package com.grd.gradingbe.service.impl;
 
 import com.grd.gradingbe.dto.request.ChangePasswordRequest;
+import com.grd.gradingbe.dto.request.UpdateUserInfoRequest;
 import com.grd.gradingbe.dto.response.UserDataResponse;
 import com.grd.gradingbe.dto.enums.TokenType;
 import com.grd.gradingbe.exception.ArgumentValidationException;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService
@@ -93,6 +95,44 @@ public class UserServiceImpl implements UserService
         }
 
         return Map.of("message", "Success");
+    }
+
+    public UserDataResponse updateUserInfo (String header, UpdateUserInfoRequest request)
+    {
+        String token = extractToken(header);
+
+        Integer userId = Integer.parseInt(jwtService.extractClaim(TokenType.ACCESS, token, Claims::getSubject));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
+
+        try
+        {
+            Optional.ofNullable(request.getFullName()).ifPresent(user::setFull_name);
+            Optional.ofNullable(request.getPhone()).ifPresent(user::setPhone);
+            Optional.ofNullable(request.getAvatarUrl()).ifPresent(user::setAvatar_url);
+            user.setUpdated_at(LocalDateTime.now());
+
+            userRepository.save(user);
+
+            return (UserDataResponse.builder()
+                    .username(user.getUsername())
+                    .fullName(user.getFull_name())
+                    .role(user.getRole())
+                    .phone(user.getPhone())
+                    .email(user.getEmail())
+                    .avatarUrl(user.getAvatar_url())
+                    .authType(user.getAuthType())
+                    .updatedAt(user.getUpdated_at())
+                    .createdAt(user.getCreated_at())
+                    .verified(user.getVerified())
+                    .isActive(user.getIs_active())
+                    .build());
+        }
+        catch (Exception e)
+        {
+            throw new ResourceManagementException("save()", "User" , "Failed to update user info");
+        }
     }
 
     private String extractToken(String header)
