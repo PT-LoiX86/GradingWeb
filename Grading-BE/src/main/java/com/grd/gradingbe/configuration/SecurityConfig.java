@@ -103,7 +103,7 @@ public class SecurityConfig
                                         "/swagger-ui.html")
                         .permitAll()
 
-                        .requestMatchers("/api/admin/**")
+                        .requestMatchers("/api/admin/**", "/api/s3/**")
                         .hasRole("ADMIN")
 
                         .anyRequest().hasAnyRole("USER", "ADMIN"))
