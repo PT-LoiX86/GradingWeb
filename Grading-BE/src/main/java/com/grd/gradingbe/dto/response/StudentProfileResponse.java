@@ -1,21 +1,27 @@
 package com.grd.gradingbe.dto.response;
 
 import com.grd.gradingbe.dto.enums.GenderType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class StudentProfileResponse {
     private Long id;
-    private String code;
     private String name;
-    private LocalDate birthDate;
+    private LocalDate dateOfBirth;
     private GenderType gender;
     private String address;
-    private Long schoolId; // Trả về ID của School
-    private Long provinceId; // Trả về ID của Province
-    private Integer year;
+    private Long schoolId;
+    private Long provinceId;
+    private Integer graduationYear;
     private String ethnic;
     private String religion;
 }

@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,19 +25,18 @@ public class StudentProfile extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String code;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
+    private User user;
 
-    @Column(nullable = false)
-    private String name;
-
-    @Column(name = "birth_date")
-    private LocalDate birthDate;
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "gender")
     private GenderType gender;
 
+    @Column(columnDefinition = "text")
     private String address;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -46,7 +47,14 @@ public class StudentProfile extends BaseEntity {
     @JoinColumn(name = "province_id", nullable = false)
     private Province province;
 
-    private Integer year; // Năm nhập học
+    @Column(name = "graduation_year")
+    private Integer graduationYear;
+
+    @Column(length = 50)
     private String ethnic;
+
+    @Column(length = 50)
     private String religion;
+
+
 }
