@@ -7,17 +7,14 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 
-public interface S3StorageService {
+public interface MediaService {
     Bucket createBucket(String bucketName);
 
-    FileMetadata uploadFile(MultipartFile file) throws IOException;
+    List<FileMetadata> uploadFiles(List<MultipartFile> files, String folder) throws IOException;
 
-    List<FileMetadata> uploadFiles(List<MultipartFile> files) throws IOException;
-
-    void deleteFile(String fileUrl);
+    void deleteFile(List<String> fileUrl);
 
     FileMetadata uploadByUrl(String url, String folder) throws IOException;
 
-    String getPublicUrl(String s3Url);
-
+    List<FileMetadata> uploadByUrls(List<String> urls, String folder);
 }

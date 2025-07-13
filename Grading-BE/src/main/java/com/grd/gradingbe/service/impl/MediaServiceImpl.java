@@ -4,7 +4,7 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import com.grd.gradingbe.dto.entity.FileMetadata;
-import com.grd.gradingbe.service.S3StorageService;
+import com.grd.gradingbe.service.MediaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
@@ -23,13 +23,12 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class S3StorageServiceImpl implements S3StorageService {
+public class MediaServiceImpl implements MediaService {
 
     @Value("${aws.s3.bucketName}")
     private String BUCKET_NAME;
@@ -48,87 +47,47 @@ public class S3StorageServiceImpl implements S3StorageService {
     }
 
     @Override
-    public FileMetadata uploadFile(MultipartFile image) {
-        if (image == null) {
-            return null;
+    public List<FileMetadata> uploadFiles(List<MultipartFile> files, String folder) {
+        if (files == null || files.isEmpty()) {
+            return List.of();
         }
 
-        String fileKey = "grad-" + image.getOriginalFilename();
-        if (Objects.requireNonNull(image.getOriginalFilename()).contains(fileKey)) {
-            fileKey = image.getOriginalFilename();
-        }
+        log.info("Uploading {} files to S3 in folder: {}", files.size(), folder);
 
-        return putByMultipartFile(BUCKET_NAME, fileKey, image, true);
-    }
-
-    @Override
-    public List<FileMetadata> uploadFiles(List<MultipartFile> files) {
-        List<FileMetadata> fileMetadata = new ArrayList<>();
-
+        List<FileMetadata> uploadedFiles = new ArrayList<>();
         for (MultipartFile file : files) {
-            String fileKey = "grad-" + file.getOriginalFilename();
-            if (Objects.requireNonNull(file.getOriginalFilename()).contains(fileKey)) {
-                fileKey = file.getOriginalFilename();
+            if (file != null && !file.isEmpty()) {
+                String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
+                String key = generateKey(folder, extension);
+                FileMetadata metadata = putByMultipartFile(BUCKET_NAME, key, file);
+                uploadedFiles.add(metadata);
             }
-            fileMetadata.add(putByMultipartFile(BUCKET_NAME, fileKey, file, true));
         }
-
-        return fileMetadata;
-    }
-
-    public FileMetadata putByMultipartFile(String bucket, String key, MultipartFile file, Boolean publicAccess) {
-        FileMetadata metadata = FileMetadata.builder()
-                .bucket(bucket)
-                .key(key)
-                .name(file.getOriginalFilename())
-                .extension(StringUtils.getFilenameExtension(file.getOriginalFilename()))
-                .mime(tika.detect(file.getOriginalFilename()))
-                .size(file.getSize())
-                .build();
-
-        ObjectMetadata objectMetadata = new ObjectMetadata();
-        objectMetadata.setContentLength(metadata.getSize());
-        objectMetadata.setContentType(metadata.getMime());
-
-        log.info("Uploading file to S3: {}", metadata.getName());
-
-        try {
-            InputStream stream = file.getInputStream();
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, key, stream, objectMetadata);
-            PutObjectResult putObjectResult = amazonS3.putObject(putObjectRequest);
-            metadata.setUrl(amazonS3.getUrl(bucket, key).toString());
-            metadata.setHash(putObjectResult.getContentMd5());
-            metadata.setEtag(putObjectResult.getETag());
-            metadata.setPublicAccess(publicAccess);
-            stream.close();
-        } catch (IOException e) {
-            log.error("Error uploading file to S3", e);
-        }
-        return metadata;
+        return uploadedFiles;
     }
 
     @Override
-    public void deleteFile(String keyName) {
-        try {
-            log.info("Deleting file from S3: {}", keyName);
-
-            if (keyName == null) {
-                return;
-            } else if (keyName.contains(urlStorage)) {
-                keyName = keyName.replace(urlStorage, "");
-            }
-
-            log.info("Deleting file from S3: {}", keyName);
-
-            DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest(BUCKET_NAME, keyName);
-            amazonS3.deleteObject(deleteObjectRequest);
-        } catch (AmazonServiceException e) {
-
-            log.error("Error deleting file from S3", e);
-
+    public void deleteFile(List<String> keyName) {
+        if (keyName == null || keyName.isEmpty()) {
+            return;
         }
 
-        log.info("File deleted from S3: {}", keyName);
+        log.info("Deleting files from S3: {}", keyName);
+
+        try {
+            List<DeleteObjectsRequest.KeyVersion> keys = new ArrayList<>();
+            for (String key : keyName) {
+                keys.add(new DeleteObjectsRequest.KeyVersion(key));
+            }
+
+            DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(BUCKET_NAME)
+                    .withKeys(keys);
+
+            amazonS3.deleteObjects(deleteObjectsRequest);
+            log.info("Successfully deleted files from S3: {}", keyName);
+        } catch (AmazonServiceException e) {
+            log.error("Error deleting files from S3: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -223,50 +182,58 @@ public class S3StorageServiceImpl implements S3StorageService {
     }
 
     @Override
-    public String getPublicUrl(String s3Url) {
-        if (s3Url == null || s3Url.trim().isEmpty()) {
-            return null;
+    public List<FileMetadata> uploadByUrls(List<String> urls, String folder) {
+        if (urls == null || urls.isEmpty()) {
+            return List.of();
         }
 
-        // Nếu đã là URL đầy đủ, trả về nguyên trạng
-        if (s3Url.startsWith("http://") || s3Url.startsWith("https://")) {
-            return s3Url;
-        }
+        log.info("Uploading {} files from URLs to S3", urls.size());
 
-        // Xử lý các trường hợp s3Url có thể là key hoặc đường dẫn đầy đủ
-        String key = s3Url;
-
-        // Nếu URL chứa tên bucket, trích xuất phần key
-        if (s3Url.contains(BUCKET_NAME)) {
-            // Trích xuất phần key từ URL chứa tên bucket
-            int bucketIndex = s3Url.indexOf(BUCKET_NAME);
-            if (bucketIndex + BUCKET_NAME.length() < s3Url.length()) {
-                // +1 để bỏ qua dấu '/' sau tên bucket
-                key = s3Url.substring(bucketIndex + BUCKET_NAME.length() + 1);
+        List<FileMetadata> uploadedFiles = new ArrayList<>();
+        for (String url : urls) {
+            if (url != null && !url.isEmpty()) {
+                try {
+                    FileMetadata metadata = uploadByUrl(url, folder);
+                    if (metadata != null) {
+                        uploadedFiles.add(metadata);
+                    }
+                } catch (IOException e) {
+                    log.error("Error uploading file from URL {}: {}", url, e.getMessage());
+                }
             }
         }
+        return uploadedFiles;
+    }
+
+    private FileMetadata putByMultipartFile(String bucket, String key, MultipartFile file) {
+        FileMetadata metadata = FileMetadata.builder()
+                .bucket(bucket)
+                .key(key)
+                .name(file.getOriginalFilename())
+                .extension(StringUtils.getFilenameExtension(file.getOriginalFilename()))
+                .mime(tika.detect(file.getOriginalFilename()))
+                .size(file.getSize())
+                .build();
+
+        ObjectMetadata objectMetadata = new ObjectMetadata();
+        objectMetadata.setContentLength(metadata.getSize());
+        objectMetadata.setContentType(metadata.getMime());
+
+        log.info("Uploading file to S3: {}", metadata.getName());
 
         try {
-            // Kiểm tra xem key đã được chuẩn hóa chưa
-            if (key.startsWith("/")) {
-                key = key.substring(1);
-            }
-
-            // Tạo URL công khai
-            String publicUrl;
-            if (urlStorage.endsWith("/")) {
-                publicUrl = urlStorage + key;
-            } else {
-                publicUrl = urlStorage + "/" + key;
-            }
-
-            log.info("Generated public URL for key {}: {}", key, publicUrl);
-
-            return publicUrl;
-        } catch (Exception e) {
-            log.error("Error generating public URL for key {}: {}", key, e.getMessage());
-            return urlStorage + "/" + key;
+            InputStream stream = file.getInputStream();
+            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, key, stream, objectMetadata);
+            PutObjectResult putObjectResult = amazonS3.putObject(putObjectRequest);
+            metadata.setUrl(amazonS3.getUrl(bucket, key).toString());
+            metadata.setHash(putObjectResult.getContentMd5());
+            metadata.setEtag(putObjectResult.getETag());
+            metadata.setPublicAccess(true);
+            stream.close();
+        } catch (IOException e) {
+            log.error("Error uploading file to S3", e);
         }
+        return metadata;
     }
 
     private String generateKey(String folder, String extension) {
