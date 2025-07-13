@@ -99,3 +99,24 @@ env:
     issuer: ${env.app.backend.base-url}
     refresh-token-validity-days: 7
     max-tokens-per-user: 5
+
+aws:
+  s3:
+    accessKey: ${AWS_ACCESS_KEY_ID}
+    secretKey: ${AWS_SECRET_ACCESS_KEY}
+    bucketName: ${AWS_S3_BUCKET_NAME}
+    endpoint: ${AWS_S3_ENDPOINT}
+
+app:
+  file-upload:
+    max-requests-per-minute: 10
+    max-files-per-request: 5
+    max-file-size: 10485760  # 10MB in bytes
+    allowed-extensions: 
+      - jpg
+      - jpeg
+      - png
+      - gif
+      - pdf
+      - doc
+      - docx
