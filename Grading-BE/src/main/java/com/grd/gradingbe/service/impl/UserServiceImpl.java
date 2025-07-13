@@ -1,9 +1,9 @@
 package com.grd.gradingbe.service.impl;
 
+import com.grd.gradingbe.dto.enums.TokenType;
 import com.grd.gradingbe.dto.request.ChangePasswordRequest;
 import com.grd.gradingbe.dto.request.UpdateUserInfoRequest;
 import com.grd.gradingbe.dto.response.UserDataResponse;
-import com.grd.gradingbe.dto.enums.TokenType;
 import com.grd.gradingbe.exception.ArgumentValidationException;
 import com.grd.gradingbe.exception.ResourceManagementException;
 import com.grd.gradingbe.exception.ResourceNotFoundException;
@@ -12,6 +12,9 @@ import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.JwtService;
 import com.grd.gradingbe.service.UserService;
 import io.jsonwebtoken.Claims;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,25 +24,33 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
-public class UserServiceImpl implements UserService
-{
+@Slf4j
+public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository, JwtService jwtService, PasswordEncoder passwordEncoder)
-    {
+    public UserServiceImpl(UserRepository userRepository, JwtService jwtService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
     }
 
-    public UserDataResponse getUserData(String header)
-    {
+    /**
+     * Lấy thông tin user data
+     * Cache với key là userId trong 15 phút
+     */
+    public UserDataResponse getUserData(String header) {
         String token = extractToken(header);
 
         Integer userId = Integer.parseInt(jwtService.extractClaim(TokenType.ACCESS, token, Claims::getSubject));
+        log.info("Fetching user data for userId: {} from database (cache miss)", userId);
 
+        return getUserDataFromCache(userId);
+    }
+
+    @Cacheable(value = "user-profiles", key = "#userId")
+    public UserDataResponse getUserDataFromCache(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
 
@@ -58,56 +69,63 @@ public class UserServiceImpl implements UserService
                 .build());
     }
 
-    public Map<String, String> changePassword(String header, ChangePasswordRequest request)
-    {
+    /**
+     * Thay đổi mật khẩu
+     * Xóa cache user profile sau khi thay đổi mật khẩu
+     */
+    public Map<String, String> changePassword(String header, ChangePasswordRequest request) {
         String token = extractToken(header);
 
         Integer userId = Integer.parseInt(jwtService.extractClaim(TokenType.ACCESS, token, Claims::getSubject));
+        log.info("Changing password for userId: {}", userId);
+
+        // Evict cache after password change
+        evictUserCache(userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
 
-        if (!user.getUsername().equals(request.getUsername()))
-        {
-            throw new ArgumentValidationException ("Username does not match the authenticated user");
+        if (!user.getUsername().equals(request.getUsername())) {
+            throw new ArgumentValidationException("Username does not match the authenticated user");
         }
 
-        if (!user.getEmail().equals(request.getEmail()))
-        {
-            throw new ArgumentValidationException ("Email does not match the authenticated user");
+        if (!user.getEmail().equals(request.getEmail())) {
+            throw new ArgumentValidationException("Email does not match the authenticated user");
         }
 
-        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword()))
-        {
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new ArgumentValidationException("Old password does not match the authenticated user");
         }
 
         user.setPassword_hash(passwordEncoder.encode(request.getNewPassword()));
         user.setUpdated_at(LocalDateTime.now());
 
-        try
-        {
+        try {
             userRepository.save(user);
-        }
-        catch (DataAccessException e)
-        {
+        } catch (DataAccessException e) {
             throw new ResourceManagementException("save()", String.format("User with id: %d", userId), "Failed to update user");
         }
 
         return Map.of("message", "Success");
     }
 
-    public UserDataResponse updateUserInfo (String header, UpdateUserInfoRequest request)
-    {
+    /**
+     * Cập nhật thông tin user
+     * Xóa cache user profile sau khi cập nhật
+     */
+    public UserDataResponse updateUserInfo(String header, UpdateUserInfoRequest request) {
         String token = extractToken(header);
 
         Integer userId = Integer.parseInt(jwtService.extractClaim(TokenType.ACCESS, token, Claims::getSubject));
+        log.info("Updating user info for userId: {}", userId);
+
+        // Evict cache after update
+        evictUserCache(userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
 
-        try
-        {
+        try {
             Optional.ofNullable(request.getFullName()).ifPresent(user::setFull_name);
             Optional.ofNullable(request.getPhone()).ifPresent(user::setPhone);
             Optional.ofNullable(request.getAvatarUrl()).ifPresent(user::setAvatar_url);
@@ -128,18 +146,22 @@ public class UserServiceImpl implements UserService
                     .verified(user.getVerified())
                     .isActive(user.getIs_active())
                     .build());
-        }
-        catch (Exception e)
-        {
-            throw new ResourceManagementException("save()", "User" , "Failed to update user info");
+        } catch (Exception e) {
+            throw new ResourceManagementException("save()", "User", "Failed to update user info");
         }
     }
 
-    private String extractToken(String header)
-    {
+    /**
+     * Helper method to evict user cache
+     */
+    @CacheEvict(value = "user-profiles", key = "#userId")
+    public void evictUserCache(Integer userId) {
+        log.debug("Evicting cache for userId: {}", userId);
+    }
+
+    private String extractToken(String header) {
         String token = null;
-        if (header != null && header.startsWith("Bearer "))
-        {
+        if (header != null && header.startsWith("Bearer ")) {
             token = header.substring(7);
         }
         return token;

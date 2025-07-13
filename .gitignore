@@ -9,3 +9,5 @@
 .env
 
 logs/
+
+.github/copilot/
