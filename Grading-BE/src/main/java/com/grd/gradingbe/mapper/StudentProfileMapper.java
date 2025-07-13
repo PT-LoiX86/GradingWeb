@@ -1,53 +1,64 @@
 package com.grd.gradingbe.mapper;
 
-import com.grd.gradingbe.dto.request.ProvinceRequest;
-import com.grd.gradingbe.dto.request.SchoolRequest;
 import com.grd.gradingbe.dto.request.StudentProfileRequest;
 import com.grd.gradingbe.dto.response.StudentProfileResponse;
 import com.grd.gradingbe.model.Province;
 import com.grd.gradingbe.model.School;
 import com.grd.gradingbe.model.StudentProfile;
+import com.grd.gradingbe.model.User;
+import com.grd.gradingbe.repository.ProvinceRepository;
+import com.grd.gradingbe.repository.SchoolRepository;
+import com.grd.gradingbe.repository.UserRepository;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {SchoolMapper.class, ProvinceMapper.class})
+@Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class StudentProfileMapper {
 
     @Autowired
-    private SchoolMapper schoolMapper;
+    protected UserRepository userRepository;
 
     @Autowired
-    private ProvinceMapper provinceMapper;
+    protected SchoolRepository schoolRepository;
 
+    @Autowired
+    protected ProvinceRepository provinceRepository;
+//ánh xạ
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", source = "userId", qualifiedByName = "mapUserIdToUser")
     @Mapping(target = "school", source = "schoolId", qualifiedByName = "mapSchoolIdToSchool")
     @Mapping(target = "province", source = "provinceId", qualifiedByName = "mapProvinceIdToProvince")
-    public abstract StudentProfile toEntity(StudentProfileRequest studentProfileRequest);
+    public abstract StudentProfile toEntity(StudentProfileRequest request);
 
+    @Mapping(target = "name", source = "user.username")//để ý thằng này sẽ láy name ở bảng user nên ánh xạ với thằng user.username
     @Mapping(target = "schoolId", source = "school.id")
     @Mapping(target = "provinceId", source = "province.id")
-    public abstract StudentProfileResponse toResponse(StudentProfile studentProfile);
+    public abstract StudentProfileResponse toResponse(StudentProfile profile);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true) // User không thay đổi khi update
     @Mapping(target = "school", source = "schoolId", qualifiedByName = "mapSchoolIdToSchool")
     @Mapping(target = "province", source = "provinceId", qualifiedByName = "mapProvinceIdToProvince")
-    public abstract void updateEntityFromRequest(StudentProfileRequest studentProfileRequest, @MappingTarget StudentProfile studentProfile);
+    public abstract void updateEntityFromRequest(StudentProfileRequest request, @MappingTarget StudentProfile profile);
+
+    @Named("mapUserIdToUser")
+    protected User mapUserIdToUser(Integer userId) {
+        if (userId == null) return null;
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+    }
 
     @Named("mapSchoolIdToSchool")
-    School mapSchoolIdToSchool(Long schoolId) {
-        if (schoolId == null) {
-            return null;
-        }
-        // Tạo một SchoolRequest tạm thời với trường tối thiểu (không cần id)
-        SchoolRequest schoolRequest = new SchoolRequest();
-        // Vì không có id, chỉ tạo một đối tượng rỗng và để service/repository xử lý sau
-        return schoolMapper.toEntity(schoolRequest); // Cần điều chỉnh logic ở service
+    protected School mapSchoolIdToSchool(Long schoolId) {
+        if (schoolId == null) return null;
+        return schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new IllegalArgumentException("School not found with id: " + schoolId));
     }
 
     @Named("mapProvinceIdToProvince")
-    Province mapProvinceIdToProvince(Long provinceId) {
-        if (provinceId == null) {
-            return null;
-        }
-        ProvinceRequest provinceRequest = new ProvinceRequest();
-        return provinceMapper.toEntity(provinceRequest);
+    protected Province mapProvinceIdToProvince(Long provinceId) {
+        if (provinceId == null) return null;
+        return provinceRepository.findById(provinceId)
+                .orElseThrow(() -> new IllegalArgumentException("Province not found with id: " + provinceId));
     }
 }

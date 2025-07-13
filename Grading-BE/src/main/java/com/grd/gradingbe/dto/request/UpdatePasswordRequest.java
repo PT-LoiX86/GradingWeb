@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ChangePasswordRequest
+public class UpdatePasswordRequest
 {
     @NotBlank(message = "Username is required")
     private String username;

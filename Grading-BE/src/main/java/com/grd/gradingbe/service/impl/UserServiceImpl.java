@@ -3,13 +3,14 @@ package com.grd.gradingbe.service.impl;
 import com.grd.gradingbe.dto.enums.TokenType;
 import com.grd.gradingbe.dto.request.ChangePasswordRequest;
 import com.grd.gradingbe.dto.request.UpdateUserInfoRequest;
+import com.grd.gradingbe.dto.request.UpdatePasswordRequest;
+import com.grd.gradingbe.dto.request.UpdateUserRequest;
 import com.grd.gradingbe.dto.response.UserDataResponse;
 import com.grd.gradingbe.exception.ArgumentValidationException;
 import com.grd.gradingbe.exception.ResourceManagementException;
 import com.grd.gradingbe.exception.ResourceNotFoundException;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
-import com.grd.gradingbe.service.JwtService;
 import com.grd.gradingbe.service.UserService;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;
@@ -19,22 +20,17 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
-    private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
-
-    public UserServiceImpl(UserRepository userRepository, JwtService jwtService, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.jwtService = jwtService;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     /**
      * Lấy thông tin user data

@@ -1,16 +1,16 @@
 package com.grd.gradingbe.service;
 
-import com.grd.gradingbe.dto.request.ChangePasswordRequest;
-import com.grd.gradingbe.dto.request.UpdateUserInfoRequest;
+import com.grd.gradingbe.dto.request.UpdatePasswordRequest;
+import com.grd.gradingbe.dto.request.UpdateUserRequest;
 import com.grd.gradingbe.dto.response.UserDataResponse;
 
 import java.util.Map;
 
 public interface UserService
 {
-    UserDataResponse getUserData(String header);
+    UserDataResponse getUserData(Integer userId);
 
-    UserDataResponse updateUserInfo (String header, UpdateUserInfoRequest request);
+    UserDataResponse updateUserInfo (Integer userId, UpdateUserRequest request);
 
-    Map<String, String> changePassword(String header, ChangePasswordRequest request);
+    Map<String, String> changePassword(Integer userId, UpdatePasswordRequest request);
 }
