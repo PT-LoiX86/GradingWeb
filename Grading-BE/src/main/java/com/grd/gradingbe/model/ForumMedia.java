@@ -1,13 +1,11 @@
 package com.grd.gradingbe.model;
 
 import com.grd.gradingbe.dto.entity.BaseEntity;
-import com.grd.gradingbe.dto.request.ForumMediaRequest;
+import com.grd.gradingbe.dto.enums.MediaType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
-
-import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -15,29 +13,24 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "forum_posts")
-public class ForumPost extends BaseEntity
+@Table(name = "forum_media")
+public class ForumMedia extends BaseEntity
 {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title;
+    private MediaType type;
 
-    private String content;
-
-    private Boolean is_pinned;
-
-    private Boolean is_locked;
-
-    private Long like_count;
+    private String url;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "channel_id")
+    @JoinColumn(name = "post_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private ForumChannel forumChannel;
+    private ForumPost forumPost;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "creator_id")
-    private User creator;
+    @JoinColumn(name = "comment_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private ForumComment forumComment;
 }

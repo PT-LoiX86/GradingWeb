@@ -1,5 +1,6 @@
 package com.grd.gradingbe.dto.response;
 
+import com.grd.gradingbe.dto.request.ForumMediaRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
@@ -12,19 +13,22 @@ public record CommentResponse(
         Long id,
 
         @Schema(description = "Id of the comment's post", example = "1")
-        Long post_id,
+        Long postId,
 
         @Schema(description = "Id of the comment's creator", example = "1")
-        Integer creator_id,
-
-        @Schema(description = "This comment's replies", example = "[]")
-        List<CommentResponse> replies,
+        Integer creatorId,
 
         @Schema(description = "Content of the comment", example = "Idk man")
         String content,
 
+        @Schema(description = "List of comment's media")
+        List<ForumMediaRequest> mediaList,
+
         @Schema(description = "Number of comment's like", example = "0")
-        Long like_count,
+        Long likeCount,
+
+        @Schema(description = "This comment's replies", example = "[]")
+        List<CommentResponse> replies,
 
         @Schema(description = "Creation timestamp", example = "2024-01-01T10:00:00")
         String createdAt,
