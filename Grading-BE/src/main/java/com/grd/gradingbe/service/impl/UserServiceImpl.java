@@ -1,8 +1,5 @@
 package com.grd.gradingbe.service.impl;
 
-import com.grd.gradingbe.dto.enums.TokenType;
-import com.grd.gradingbe.dto.request.ChangePasswordRequest;
-import com.grd.gradingbe.dto.request.UpdateUserInfoRequest;
 import com.grd.gradingbe.dto.request.UpdatePasswordRequest;
 import com.grd.gradingbe.dto.request.UpdateUserRequest;
 import com.grd.gradingbe.dto.response.UserDataResponse;
@@ -12,7 +9,7 @@ import com.grd.gradingbe.exception.ResourceNotFoundException;
 import com.grd.gradingbe.model.User;
 import com.grd.gradingbe.repository.UserRepository;
 import com.grd.gradingbe.service.UserService;
-import io.jsonwebtoken.Claims;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -20,66 +17,32 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import lombok.RequiredArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 
-@Service
 @Slf4j
+@Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    /**
-     * Lấy thông tin user data
-     * Cache với key là userId trong 15 phút
-     */
-    public UserDataResponse getUserData(String header) {
-        String token = extractToken(header);
-
-        Integer userId = Integer.parseInt(jwtService.extractClaim(TokenType.ACCESS, token, Claims::getSubject));
-        log.info("Fetching user data for userId: {} from database (cache miss)", userId);
-
+    @Override
+    public UserDataResponse getUserData(Integer userId) {
+        log.info("Fetching user data for userId: {}", userId);
         return getUserDataFromCache(userId);
     }
 
-    @Cacheable(value = "user-profiles", key = "#userId")
-    public UserDataResponse getUserDataFromCache(Integer userId) {
+    @Override
+    public Map<String, String> changePassword(Integer userId, UpdatePasswordRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
 
-        return (UserDataResponse.builder()
-                .username(user.getUsername())
-                .fullName(user.getFull_name())
-                .role(user.getRole())
-                .phone(user.getPhone())
-                .email(user.getEmail())
-                .avatarUrl(user.getAvatar_url())
-                .authType(user.getAuthType())
-                .updatedAt(user.getUpdated_at())
-                .createdAt(user.getCreated_at())
-                .verified(user.getVerified())
-                .isActive(user.getIs_active())
-                .build());
-    }
-
-    /**
-     * Thay đổi mật khẩu
-     * Xóa cache user profile sau khi thay đổi mật khẩu
-     */
-    public Map<String, String> changePassword(String header, ChangePasswordRequest request) {
-        String token = extractToken(header);
-
-        Integer userId = Integer.parseInt(jwtService.extractClaim(TokenType.ACCESS, token, Claims::getSubject));
         log.info("Changing password for userId: {}", userId);
 
-        // Evict cache after password change
         evictUserCache(userId);
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
 
         if (!user.getUsername().equals(request.getUsername())) {
             throw new ArgumentValidationException("Username does not match the authenticated user");
@@ -99,27 +62,19 @@ public class UserServiceImpl implements UserService {
         try {
             userRepository.save(user);
         } catch (DataAccessException e) {
-            throw new ResourceManagementException("save()", String.format("User with id: %d", userId), "Failed to update user");
+            throw new ResourceManagementException("save()", String.format("User with username: %d", userId), "Failed to update user");
         }
 
         return Map.of("message", "Success");
     }
 
-    /**
-     * Cập nhật thông tin user
-     * Xóa cache user profile sau khi cập nhật
-     */
-    public UserDataResponse updateUserInfo(String header, UpdateUserInfoRequest request) {
-        String token = extractToken(header);
-
-        Integer userId = Integer.parseInt(jwtService.extractClaim(TokenType.ACCESS, token, Claims::getSubject));
-        log.info("Updating user info for userId: {}", userId);
-
-        // Evict cache after update
-        evictUserCache(userId);
-
+    @Override
+    public UserDataResponse updateUserInfo(Integer userId, UpdateUserRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
+
+        log.info("Updating user info for userId: {}", userId);
+        evictUserCache(userId);
 
         try {
             Optional.ofNullable(request.getFullName()).ifPresent(user::setFull_name);
@@ -147,19 +102,29 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    /**
-     * Helper method to evict user cache
-     */
+    @Cacheable(value = "user-profiles", key = "#userId")
+    public UserDataResponse getUserDataFromCache(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId.toString()));
+
+        return (UserDataResponse.builder()
+                .username(user.getUsername())
+                .fullName(user.getFull_name())
+                .role(user.getRole())
+                .phone(user.getPhone())
+                .email(user.getEmail())
+                .avatarUrl(user.getAvatar_url())
+                .authType(user.getAuthType())
+                .updatedAt(user.getUpdated_at())
+                .createdAt(user.getCreated_at())
+                .verified(user.getVerified())
+                .isActive(user.getIs_active())
+                .build());
+    }
+
     @CacheEvict(value = "user-profiles", key = "#userId")
     public void evictUserCache(Integer userId) {
         log.debug("Evicting cache for userId: {}", userId);
     }
 
-    private String extractToken(String header) {
-        String token = null;
-        if (header != null && header.startsWith("Bearer ")) {
-            token = header.substring(7);
-        }
-        return token;
-    }
 }
