@@ -1,7 +1,5 @@
 package com.grd.gradingbe.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -13,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UpdateUserInfoRequest
+public class UpdateUserRequest
 {
     @Size(min = 3, max = 50, message = "Full name must be between 3 and 50 characters")
     private String fullName;
