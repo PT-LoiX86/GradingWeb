@@ -1,17 +1,18 @@
 package com.grd.gradingbe.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class ProvinceResponse {
+public class SubjectResponse {
     private Long id;
-    private String code;
     private String name;
-    private String countryCode;
+    private String code;
+    private String description;
 }
+

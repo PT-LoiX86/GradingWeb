@@ -1,18 +1,16 @@
 package com.grd.gradingbe.dto.request;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class SchoolRequest {
-    private String code;
+public class SubjectUpdateRequest {
     private String name;
-    private String address;
-    private String phoneNumber;
-    private String email;
-    private Long provinceId;
+    private String code;
+    private String description;
 }
