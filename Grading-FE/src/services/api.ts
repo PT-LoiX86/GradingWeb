@@ -42,6 +42,11 @@ class ApiClient {
       credentials: 'include',
     };
 
+    console.log('API Request:', { url, hasToken: !!token });
+    if (token) {
+      console.log('Token preview:', token.substring(0, 20) + '...');
+    }
+
     try {
       const response = await fetch(url, config);
       
@@ -209,14 +214,20 @@ export const authAPI = {
       }
       
       // Optionally fetch user info and store
+      // Note: Commented out to avoid authentication issues during OAuth2 callback
+      // User info can be fetched later when needed
+      /*
       try {
-        const userResponse = await apiClient.get('/auth/me');
+        console.log('Attempting to fetch user info...');
+        const userResponse = await apiClient.get('/users/me');
         localStorage.setItem('user', JSON.stringify(userResponse));
         console.log('User info stored:', userResponse);
       } catch (error) {
         console.warn('Failed to fetch user info after OAuth2 login:', error);
+        console.warn('Error details:', error);
         // This is not critical, we can continue without user info
       }
+      */
       
     } catch (error) {
       console.error('Error in handleOAuth2Callback:', error);

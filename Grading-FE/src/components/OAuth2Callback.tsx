@@ -69,7 +69,6 @@ const OAuth2Callback: React.FC<OAuth2CallbackProps> = ({ onSuccess, onError }) =
             
             if (storedAccessToken && storedRefreshToken) {
               console.log('Tokens stored successfully, calling onSuccess');
-              showSuccess('Đăng nhập Google thành công!');
               
               // Clean up URL parameters immediately
               window.history.replaceState({}, document.title, '/');
