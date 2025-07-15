@@ -37,7 +37,7 @@ public class SecurityConfig
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
     private final CustomUserDetailsService userDetailsService;
 
-    @Value("${env.app.front-end.base-url}")
+    @Value("${env.app.frontend.base-url}")
     private String frontendURL;
 
     @Bean
@@ -70,13 +70,10 @@ public class SecurityConfig
     public CorsConfigurationSource corsConfigurationSource()
     {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin(frontendURL);
-        configuration.addAllowedMethod("GET");
-        configuration.addAllowedMethod("POST");
-        configuration.addAllowedMethod("PUT");
-        configuration.addAllowedMethod("DELETE");
+        configuration.addAllowedOrigin("*");
+        configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
