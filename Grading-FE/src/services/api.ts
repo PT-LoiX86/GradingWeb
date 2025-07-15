@@ -187,13 +187,45 @@ export const authAPI = {
   },
 
   handleOAuth2Callback: async (accessToken: string, refreshToken: string): Promise<void> => {
-    // Store tokens from OAuth2 callback
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    
-    // Optionally, you can fetch user info here if needed
-    // const userResponse = await apiClient.get('/auth/me');
-    // localStorage.setItem('user', JSON.stringify(userResponse));
+    try {
+      // Store tokens from OAuth2 callback
+      console.log('Storing OAuth2 tokens...');
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      
+      // Verify storage
+      const storedAccessToken = localStorage.getItem('accessToken');
+      const storedRefreshToken = localStorage.getItem('refreshToken');
+      
+      console.log('Token storage completed:', {
+        accessTokenStored: !!storedAccessToken,
+        refreshTokenStored: !!storedRefreshToken,
+        accessTokenLength: storedAccessToken?.length || 0,
+        refreshTokenLength: storedRefreshToken?.length || 0
+      });
+      
+      if (!storedAccessToken || !storedRefreshToken) {
+        throw new Error('Failed to store tokens in localStorage');
+      }
+      
+      // Optionally fetch user info and store
+      try {
+        const userResponse = await apiClient.get('/auth/me');
+        localStorage.setItem('user', JSON.stringify(userResponse));
+        console.log('User info stored:', userResponse);
+      } catch (error) {
+        console.warn('Failed to fetch user info after OAuth2 login:', error);
+        // This is not critical, we can continue without user info
+      }
+      
+    } catch (error) {
+      console.error('Error in handleOAuth2Callback:', error);
+      // Clear any partially stored data
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      throw error;
+    }
   },
 
   getCurrentUser: () => {

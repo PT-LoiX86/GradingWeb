@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router';
 import { Auth, Home } from './components';
 import { authAPI } from './services/api';
 import { useErrorHandler } from './hooks/useErrorHandler';
@@ -21,6 +22,7 @@ interface RegisterFormValues {
 }
 
 function App() {
+  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -41,12 +43,15 @@ function App() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if this is an OAuth2 callback
-        const urlParams = new URLSearchParams(window.location.search);
-        const hasOAuth2Params = urlParams.has('accessToken') || urlParams.has('refreshToken') || urlParams.has('error');
         
-        if (hasOAuth2Params) {
-          console.log('OAuth2 callback detected');
+        // Check if this is an OAuth2 callback
+        const urlParams = new URLSearchParams(location.search);
+        const hasOAuth2Params = urlParams.has('accessToken') || urlParams.has('refreshToken') || urlParams.has('error');
+        const isOAuth2CallbackPath = location.pathname === '/oauth2/callback';
+        
+        
+        if (isOAuth2CallbackPath && hasOAuth2Params) {
+          console.log('App.tsx: OAuth2 callback detected, setting isOAuth2Callback=true');
           setIsOAuth2Callback(true);
           setIsInitialLoading(false);
           return;
@@ -56,28 +61,36 @@ function App() {
         const refreshToken = authAPI.getRefreshToken();
         
         if (token) {
+          console.log('App.tsx: Valid access token found, setting authenticated=true');
           setIsAuthenticated(true);
         } else if (refreshToken) {
+          console.log('App.tsx: No access token but refresh token found, attempting refresh...');
           // Try to refresh token
           try {
             await authAPI.refreshToken(refreshToken);
+            console.log('App.tsx: Token refresh successful');
             setIsAuthenticated(true);
           } catch (error) {
+            console.error('App.tsx: Token refresh failed:', error);
             // Refresh failed, clear storage
             await authAPI.logout();
             setIsAuthenticated(false);
           }
+        } else {
+          console.log('App.tsx: No valid tokens found, user not authenticated');
+          setIsAuthenticated(false);
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
+        console.error('App.tsx: Auth check failed:', error);
         setIsAuthenticated(false);
       } finally {
+        console.log('App.tsx: Auth check completed, setting isInitialLoading=false');
         setIsInitialLoading(false);
       }
     };
 
     checkAuth();
-  }, []);
+  }, [location]);
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
@@ -92,9 +105,39 @@ function App() {
     }
   };
 
-  const handleOAuth2Success = () => {
+  const handleOAuth2Success = async () => {
+    console.log('OAuth2 success handler called');
     setIsOAuth2Callback(false);
-    setIsAuthenticated(true);
+    
+    // Re-check authentication state after OAuth2 tokens are stored
+    try {
+      const token = authAPI.getAccessToken();
+      const refreshToken = authAPI.getRefreshToken();
+      
+      console.log('Checking stored tokens:', { 
+        hasAccessToken: !!token, 
+        hasRefreshToken: !!refreshToken 
+      });
+      
+      if (token && refreshToken) {
+        setIsAuthenticated(true);
+        console.log('OAuth2 authentication successful, redirecting to home');
+        
+        // Clear the URL completely to remove OAuth2 callback parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Optional: Show success message
+        showSuccess('Đăng nhập Google thành công!');
+      } else {
+        console.error('OAuth2 success but no tokens found');
+        setIsAuthenticated(false);
+        showError('Lỗi lưu trữ token. Vui lòng thử lại.');
+      }
+    } catch (error) {
+      console.error('Error checking authentication after OAuth2:', error);
+      setIsAuthenticated(false);
+      showError('Lỗi xác thực. Vui lòng thử lại.');
+    }
   };
 
   const handleOAuth2Error = () => {

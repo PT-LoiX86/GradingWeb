@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router';
 import { authAPI } from '../services/api';
 import { useErrorHandler } from '../hooks/useErrorHandler';
 
@@ -8,18 +9,24 @@ interface OAuth2CallbackProps {
 }
 
 const OAuth2Callback: React.FC<OAuth2CallbackProps> = ({ onSuccess, onError }) => {
+  const location = useLocation();
   const { showError, showSuccess } = useErrorHandler();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        const urlParams = new URLSearchParams(window.location.search);
+        const urlParams = new URLSearchParams(location.search);
         const accessToken = urlParams.get('accessToken');
         const refreshToken = urlParams.get('refreshToken');
         const error = urlParams.get('error');
 
-        console.log('OAuth2 callback params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, error });
+        console.log('OAuth2 callback params:', { 
+          pathname: location.pathname,
+          accessToken: !!accessToken, 
+          refreshToken: !!refreshToken, 
+          error 
+        });
 
         if (error) {
           const decodedError = decodeURIComponent(error);
@@ -42,14 +49,51 @@ const OAuth2Callback: React.FC<OAuth2CallbackProps> = ({ onSuccess, onError }) =
 
         if (accessToken && refreshToken) {
           console.log('OAuth2 tokens received, processing...');
-          await authAPI.handleOAuth2Callback(accessToken, refreshToken);
-          showSuccess('Đăng nhập Google thành công!');
+          console.log('Access token length:', accessToken.length);
+          console.log('Refresh token length:', refreshToken.length);
           
-          // Clean up URL parameters
-          window.history.replaceState({}, document.title, '/');
-          setTimeout(() => onSuccess(), 1000);
+          try {
+            // Store tokens using the API
+            await authAPI.handleOAuth2Callback(accessToken, refreshToken);
+            
+            // Verify tokens were stored correctly
+            const storedAccessToken = authAPI.getAccessToken();
+            const storedRefreshToken = authAPI.getRefreshToken();
+            
+            console.log('Token storage verification:', {
+              storedAccessToken: !!storedAccessToken,
+              storedRefreshToken: !!storedRefreshToken,
+              accessTokenMatch: storedAccessToken === accessToken,
+              refreshTokenMatch: storedRefreshToken === refreshToken
+            });
+            
+            if (storedAccessToken && storedRefreshToken) {
+              console.log('Tokens stored successfully, calling onSuccess');
+              showSuccess('Đăng nhập Google thành công!');
+              
+              // Clean up URL parameters immediately
+              window.history.replaceState({}, document.title, '/');
+              
+              // Call onSuccess with a small delay to ensure proper state updates
+              setTimeout(() => {
+                console.log('Calling onSuccess callback');
+                onSuccess();
+              }, 100);
+            } else {
+              console.error('Failed to store tokens properly');
+              showError('Không thể lưu thông tin đăng nhập. Vui lòng thử lại.');
+              window.history.replaceState({}, document.title, '/');
+              setTimeout(() => onError(), 1000);
+            }
+          } catch (error) {
+            console.error('OAuth2 callback processing error:', error);
+            showError('Không thể xử lý phản hồi từ Google. Vui lòng thử lại.');
+            window.history.replaceState({}, document.title, '/');
+            setTimeout(() => onError(), 1000);
+          }
         } else {
           console.error('Invalid OAuth2 callback - missing tokens');
+          console.log('Received params:', { accessToken: !!accessToken, refreshToken: !!refreshToken });
           showError('Phản hồi xác thực không hợp lệ. Vui lòng thử lại.');
           window.history.replaceState({}, document.title, '/');
           setTimeout(() => onError(), 1000);
@@ -65,7 +109,7 @@ const OAuth2Callback: React.FC<OAuth2CallbackProps> = ({ onSuccess, onError }) =
     };
 
     // Only handle callback if we have URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(location.search);
     if (urlParams.has('accessToken') || urlParams.has('refreshToken') || urlParams.has('error')) {
       handleCallback();
     } else {
@@ -73,7 +117,7 @@ const OAuth2Callback: React.FC<OAuth2CallbackProps> = ({ onSuccess, onError }) =
       setLoading(false);
       onError();
     }
-  }, [onSuccess, onError, showError, showSuccess]);
+  }, [location, onSuccess, onError, showError, showSuccess]);
 
   if (loading) {
     return (
