@@ -31,7 +31,7 @@ public class ForumChannelServiceImpl implements ForumChannelService
         Sort sorter = sortBy.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sorter);
-        Page<ForumChannel> channelPages = forumChannelRepository.findAll(pageable);
+        Page<ForumChannel> channelPages = forumChannelRepository.findAllByName(pageable, search);
         List<ForumChannel> channelContents = channelPages.getContent();
 
         return PageResponse.<ChannelResponse>builder()
@@ -42,6 +42,14 @@ public class ForumChannelServiceImpl implements ForumChannelService
                 .totalPages(channelPages.getTotalPages())
                 .last(channelPages.isLast())
                 .build();
+    }
+
+    public ChannelResponse getChannel(Long id)
+    {
+        ForumChannel forumChannel = forumChannelRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Channel", "Id", id.toString()));
+
+        return (responseMapping(forumChannel));
     }
 
     public ChannelResponse createChannel(ForumChannelRequest request)

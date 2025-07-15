@@ -45,7 +45,7 @@ public class ForumPostServiceImpl implements ForumPostService
         Sort sorter = sortBy.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sorter);
-        Page<ForumPost> postPages = forumPostRepository.findAll(pageable);
+        Page<ForumPost> postPages = forumPostRepository.findAllByName(pageable, search);
         List<ForumPost> postContents = postPages.getContent();
 
         return PageResponse.<PostResponse>builder()
@@ -56,6 +56,14 @@ public class ForumPostServiceImpl implements ForumPostService
                 .totalPages(postPages.getTotalPages())
                 .last(postPages.isLast())
                 .build();
+    }
+
+    public PostResponse getPost(Long id)
+    {
+        ForumPost post = forumPostRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Forum post", "Id", id.toString()));
+
+        return responseMapping(post);
     }
 
     public PostResponse createPost(Integer userId, ForumPostRequest request)
@@ -125,6 +133,13 @@ public class ForumPostServiceImpl implements ForumPostService
         {
             throw new IllegalArgumentException("Post's creator mismatch");
         }
+
+        forumPostRepository.deleteById(id);
+    }
+
+    public void deletePost(Long id)
+    {
+        forumPostRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "Id", id.toString()));
 
         forumPostRepository.deleteById(id);
     }

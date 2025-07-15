@@ -14,5 +14,9 @@ public interface ForumPostService
 
     void deletePost(Integer userId, Long id);
 
+    void deletePost(Long id);
+
     void likePost(Long id, int like);
+
+    PostResponse getPost(Long id);
 }

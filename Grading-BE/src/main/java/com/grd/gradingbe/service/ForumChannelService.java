@@ -13,4 +13,6 @@ public interface ForumChannelService
     ChannelResponse updateChannel(Long id, ForumChannelRequest request);
 
     void deleteChannel(Long id);
+
+    ChannelResponse getChannel(Long id);
 }

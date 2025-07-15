@@ -1,5 +1,6 @@
 package com.grd.gradingbe.controller;
 
+import com.grd.gradingbe.dto.enums.Role;
 import com.grd.gradingbe.dto.request.ForumChannelRequest;
 import com.grd.gradingbe.dto.request.ForumCommentRequest;
 import com.grd.gradingbe.dto.request.ForumPostRequest;
@@ -18,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -38,6 +40,36 @@ public class ForumController
     }
 
     //Post crud
+
+    @Operation(
+            summary = "Get forum post by id",
+            description = "Retrieve a post data"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved the post",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponse.class)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "Comment not found"
+            )
+    })
+    @GetMapping("/posts/{id}")
+    public ResponseEntity<ApiResponse<PostResponse>> getPost(
+            @Parameter(description = "Post id", example = "0")
+            @PathVariable Long id)
+    {
+        PostResponse postResponse = forumPostService.getPost(id);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
+                "Successfully retrieved the post", postResponse
+        ));
+    }
 
     @Operation(
             summary = "Get all forum's posts",
@@ -67,7 +99,7 @@ public class ForumController
             @RequestParam(defaultValue = "id") String sortBy,
             @Parameter(description = "Sort direction (asc/desc)", example = "asc")
             @RequestParam(defaultValue = "asc") String sortDir,
-            @Parameter(description = "Search keyword for major name or code")
+            @Parameter(description = "Search keyword for post title")
             @RequestParam(required = false) String search)
     {
         PageResponse<PostResponse> postResponse = forumPostService.getPosts(page, size, sortBy, sortDir, search);
@@ -169,11 +201,19 @@ public class ForumController
     })
     @DeleteMapping("/posts/{id}")
     public ResponseEntity<ApiResponse<Void>> deletePost(
-            Principal principal,
+            Authentication authentication,
             @Parameter(description = "Post ID", required = true, example = "1")
             @PathVariable Long id)
     {
-        forumPostService.deletePost(Integer.parseInt(principal.getName()),  id);
+        if (authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_" + Role.ADMIN.name())))
+        {
+            forumPostService.deletePost(id);
+        }
+        else
+        {
+            forumPostService.deletePost(Integer.parseInt(authentication.getName()),  id);
+        }
 
         return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
                 "Successfully deleted the post", null
@@ -215,6 +255,36 @@ public class ForumController
     //Comment crud
 
     @Operation(
+            summary = "Get forum comment by id",
+            description = "Retrieve a comment data"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved the comment",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponse.class)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "Comment not found"
+            )
+    })
+    @GetMapping("/comments/{id}")
+    public ResponseEntity<ApiResponse<CommentResponse>> getComment(
+            @Parameter(description = "Comment id", example = "0")
+            @PathVariable Long id)
+    {
+        CommentResponse commentResponse = forumCommentService.getComment(id);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
+                "Successfully retrieved the comment", commentResponse
+        ));
+    }
+
+    @Operation(
             summary = "Get all post's comments",
             description = "Retrieve a paginated list of all comments within the post"
     )
@@ -241,11 +311,9 @@ public class ForumController
             @Parameter(description = "Sort by field", example = "name")
             @RequestParam(defaultValue = "id") String sortBy,
             @Parameter(description = "Sort direction (asc/desc)", example = "asc")
-            @RequestParam(defaultValue = "asc") String sortDir,
-            @Parameter(description = "Search keyword for major name or code")
-            @RequestParam(required = false) String search)
+            @RequestParam(defaultValue = "asc") String sortDir)
     {
-        PageResponse<CommentResponse> commentResponse = forumCommentService.getComments(page, size, sortBy, sortDir, search);
+        PageResponse<CommentResponse> commentResponse = forumCommentService.getComments(page, size, sortBy, sortDir);
 
         return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
                 "Successfully retrieved all comments", commentResponse
@@ -343,11 +411,19 @@ public class ForumController
     })
     @DeleteMapping("/comments/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteComment(
-            Principal principal,
+            Authentication authentication,
             @Parameter(description = "Comment ID", required = true, example = "1")
             @PathVariable Long id)
     {
-        forumCommentService.deleteComment(Integer.parseInt(principal.getName()),  id);
+        if (authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_" + Role.ADMIN.name())))
+        {
+            forumCommentService.deleteComment(id);
+        }
+        else
+        {
+            forumCommentService.deleteComment(Integer.parseInt(authentication.getName()),  id);
+        }
 
         return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
                 "Successfully deleted the comment", null
@@ -389,6 +465,36 @@ public class ForumController
     //Channel crud
 
     @Operation(
+            summary = "Get forum channel by id",
+            description = "Retrieve a channel data"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved the channel",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponse.class)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "Channel not found"
+            )
+    })
+    @GetMapping("/channels/{id}")
+    public ResponseEntity<ApiResponse<ChannelResponse>> getChannel(
+            @Parameter(description = "Channel id", example = "0")
+            @PathVariable Long id)
+    {
+        ChannelResponse channelResponse = forumChannelService.getChannel(id);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
+                "Successfully retrieved the post", channelResponse
+        ));
+    }
+
+    @Operation(
             summary = "Get all forum's channel",
             description = "Retrieve a paginated list of all channels"
     )
@@ -416,7 +522,7 @@ public class ForumController
             @RequestParam(defaultValue = "id") String sortBy,
             @Parameter(description = "Sort direction (asc/desc)", example = "asc")
             @RequestParam(defaultValue = "asc") String sortDir,
-            @Parameter(description = "Search keyword for major name or code")
+            @Parameter(description = "Search keyword for channel name")
             @RequestParam(required = false) String search
     )
     {

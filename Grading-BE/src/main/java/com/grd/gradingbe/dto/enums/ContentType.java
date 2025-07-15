@@ -1,13 +1,13 @@
 package com.grd.gradingbe.dto.enums;
 
-public enum MailType
+public enum ContentType
 {
-    REGISTRATION("registration"),
-    CHANGE_PASSWORD("change_password");
+    POST("post"),
+    COMMENT("comment");
 
     private final String type;
 
-    MailType(String type)
+    ContentType(String type)
     {
         this.type = type;
     }

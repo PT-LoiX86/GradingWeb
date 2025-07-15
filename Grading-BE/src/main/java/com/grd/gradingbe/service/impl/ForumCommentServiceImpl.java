@@ -41,7 +41,7 @@ public class ForumCommentServiceImpl implements ForumCommentService
         this.forumMediaService = forumMediaService;
     }
 
-    public PageResponse<CommentResponse> getComments(int page, int size, String sortBy, String sortDir, String search)
+    public PageResponse<CommentResponse> getComments(int page, int size, String sortBy, String sortDir)
     {
         Sort sorter = sortBy.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
@@ -57,6 +57,14 @@ public class ForumCommentServiceImpl implements ForumCommentService
                 .totalPages(commentPages.getTotalPages())
                 .last(commentPages.isLast())
                 .build();
+    }
+
+    public CommentResponse getComment(Long id)
+    {
+        ForumComment comment = forumCommentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Comment", "Id", id.toString()));
+
+        return (responseMapping(comment));
     }
 
 
@@ -112,6 +120,13 @@ public class ForumCommentServiceImpl implements ForumCommentService
         {
             throw new IllegalArgumentException("Comment's creator mismatch");
         }
+
+        forumCommentRepository.deleteById(id);
+    }
+
+    public void deleteComment(Long id)
+    {
+        forumCommentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Comment", "Id", id.toString()));
 
         forumCommentRepository.deleteById(id);
     }
