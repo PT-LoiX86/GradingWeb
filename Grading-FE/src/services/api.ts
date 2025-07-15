@@ -38,6 +38,8 @@ class ApiClient {
         ...options.headers,
         ...(token && { Authorization: `Bearer ${token}` }),
       },
+      // Include credentials for OAuth2 support
+      credentials: 'include',
     };
 
     try {
@@ -181,7 +183,17 @@ export const authAPI = {
   },
 
   getOAuth2LoginUrl: async (): Promise<{ loginUrl: string }> => {
-    return apiClient.get<{ loginUrl: string }>('/auth/oauth2/login-url');
+    return apiClient.get<{ loginUrl: string }>('/oauth2/login-url');
+  },
+
+  handleOAuth2Callback: async (accessToken: string, refreshToken: string): Promise<void> => {
+    // Store tokens from OAuth2 callback
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    
+    // Optionally, you can fetch user info here if needed
+    // const userResponse = await apiClient.get('/auth/me');
+    // localStorage.setItem('user', JSON.stringify(userResponse));
   },
 
   getCurrentUser: () => {

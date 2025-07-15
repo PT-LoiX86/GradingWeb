@@ -92,7 +92,7 @@ env:
       base-url: http://localhost:8080
       oauth2-login-url: ${env.app.backend.base-url}/oauth2/authorization/google
     frontend:
-      base-url: http://localhost:5713
+      base-url: http://localhost:5173
       reset-password: http://localhost:5713/reset-password
   jwt:
     secret: ${JWT_SECRET}

@@ -19,7 +19,9 @@ interface RegisterFormValues {
 interface AuthProps {
   onLogin?: (data: LoginFormValues) => void;
   onRegister?: (data: RegisterFormValues) => void;
+  onGoogleLogin?: () => void;
   loading?: boolean;
+  googleLoading?: boolean;
   error?: string;
   validationErrors?: Record<string, string | undefined>;
   initialMode?: 'login' | 'register';
@@ -29,7 +31,9 @@ interface AuthProps {
 const Auth: React.FC<AuthProps> = ({ 
   onLogin, 
   onRegister, 
+  onGoogleLogin,
   loading, 
+  googleLoading,
   error, 
   validationErrors = {},
   initialMode = 'login',
@@ -64,7 +68,9 @@ const Auth: React.FC<AuthProps> = ({
     return (
       <AuthLoginForm
         onSubmit={handleLogin}
+        onGoogleLogin={onGoogleLogin || (() => {})}
         loading={loading}
+        googleLoading={googleLoading}
         error={error}
         validationErrors={validationErrors}
         onSwitchToRegister={switchToRegister}
@@ -75,7 +81,9 @@ const Auth: React.FC<AuthProps> = ({
   return (
     <AuthRegisterForm
       onSubmit={handleRegister}
+      onGoogleLogin={onGoogleLogin || (() => {})}
       loading={loading}
+      googleLoading={googleLoading}
       error={error}
       validationErrors={validationErrors}
       onSwitchToLogin={switchToLogin}

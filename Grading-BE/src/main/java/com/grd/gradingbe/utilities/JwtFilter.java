@@ -118,7 +118,9 @@ public class JwtFilter extends OncePerRequestFilter
     private boolean publicPath(String path) {
 
         return  path.startsWith("/api/auth/") ||
+                path.startsWith("/api/oauth2/") ||
                 path.startsWith("/oauth2/") ||
+                path.startsWith("/login/oauth2/") ||
                 path.startsWith("/api/public/") ||
                 path.startsWith("/actuator") ||
                 path.startsWith("/webjars/") ||
