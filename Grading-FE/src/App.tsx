@@ -12,9 +12,11 @@ interface LoginFormValues {
 }
 
 interface RegisterFormValues {
-  email: string;
+  username: string;
   password: string;
   confirmPassword: string;
+  email: string;
+  fullName: string;
 }
 
 function App() {
@@ -23,7 +25,14 @@ function App() {
   const [error, setError] = useState<string | undefined>(undefined);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [validationErrors, setValidationErrors] = useState<Record<string, string | undefined>>({});
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const { handleError, showSuccess } = useErrorHandler();
+
+  const handleModeChange = (mode: 'login' | 'register') => {
+    setAuthMode(mode);
+    setError(undefined);
+    setValidationErrors({});
+  };
 
   // Check if user is already authenticated on app load
   useEffect(() => {
@@ -93,18 +102,24 @@ function App() {
     
     try {
       const registerData = {
-        username: data.email.split('@')[0], // Generate username from email
+        username: data.username,
         password: data.password,
         email: data.email,
-        fullName: data.email.split('@')[0] // Use email prefix as full name for now
+        fullName: data.fullName
       };
 
       const response = await authAPI.register(registerData);
       console.log('Registration successful:', response);
       
-      // Show success message
-      setError(undefined);
-      showSuccess('Registration successful! Please check your email to verify your account.');
+      // Show success message and switch to login mode after a delay
+      showSuccess('Registration successful! Please login to continue.');
+      
+      // Switch to login mode after a short delay to let the user see the success message
+      setTimeout(() => {
+        setAuthMode('login');
+        setError(undefined);
+        setValidationErrors({});
+      }, 2000);
     } catch (error) {
       console.error('Registration failed:', error);
       const fieldErrors = handleError(error);
@@ -213,7 +228,8 @@ function App() {
         loading={loading}
         error={error}
         validationErrors={validationErrors}
-        initialMode="login"
+        initialMode={authMode}
+        onModeChange={handleModeChange}
       />
     </div>
   );

@@ -3,9 +3,11 @@ import { useForm } from 'react-hook-form';
 import { Button as ShadCNButton } from './ui/button';
 
 interface RegisterFormValues {
-  email: string;
+  username: string;
   password: string;
   confirmPassword: string;
+  email: string;
+  fullName: string;
 }
 
 const AuthRegisterForm: React.FC<{
@@ -46,6 +48,79 @@ const AuthRegisterForm: React.FC<{
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Username */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                Username
+              </label>
+              <input
+                id="username"
+                type="text"
+                {...register('username', {
+                  required: 'Username is required',
+                  minLength: {
+                    value: 3,
+                    message: 'Username must be at least 3 characters'
+                  },
+                  maxLength: {
+                    value: 20,
+                    message: 'Username must not exceed 20 characters'
+                  },
+                  pattern: {
+                    value: /^[a-zA-Z0-9_]+$/,
+                    message: 'Username can only contain letters, numbers, and underscores'
+                  }
+                })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.username || validationErrors.username 
+                    ? 'border-red-500' 
+                    : 'border-gray-300'
+                }`}
+                placeholder="Enter your username"
+              />
+              {errors.username && (
+                <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
+              )}
+              {validationErrors.username && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.username}</p>
+              )}
+            </div>
+
+            {/* Full Name */}
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name
+              </label>
+              <input
+                id="fullName"
+                type="text"
+                {...register('fullName', {
+                  required: 'Full name is required',
+                  minLength: {
+                    value: 3,
+                    message: 'Full name must be at least 3 characters'
+                  },
+                  maxLength: {
+                    value: 50,
+                    message: 'Full name must not exceed 50 characters'
+                  }
+                })}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.fullName || validationErrors.fullName 
+                    ? 'border-red-500' 
+                    : 'border-gray-300'
+                }`}
+                placeholder="Enter your full name"
+              />
+              {errors.fullName && (
+                <p className="mt-1 text-sm text-red-600">{errors.fullName.message}</p>
+              )}
+              {validationErrors.fullName && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.fullName}</p>
+              )}
+            </div>
+
+            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email address
@@ -56,8 +131,8 @@ const AuthRegisterForm: React.FC<{
                 {...register('email', { 
                   required: 'Email is required',
                   pattern: {
-                    value: /^\S+@\S+$/i,
-                    message: 'Please enter a valid email address'
+                    value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                    message: 'Invalid email format'
                   }
                 })}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
@@ -85,8 +160,12 @@ const AuthRegisterForm: React.FC<{
                 {...register('password', { 
                   required: 'Password is required',
                   minLength: {
-                    value: 6,
-                    message: 'Password must be at least 6 characters'
+                    value: 8,
+                    message: 'Password must be at least 8 characters'
+                  },
+                  maxLength: {
+                    value: 50,
+                    message: 'Password must not exceed 50 characters'
                   }
                 })}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
