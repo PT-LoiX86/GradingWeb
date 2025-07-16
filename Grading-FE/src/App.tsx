@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router';
+import { Routes, Route, Navigate, useLocation } from 'react-router';
 import { Auth, Home } from './components';
 import AdminDashboard from './components/AdminDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+import AssignmentsPage from './components/pages/AssignmentsPage';
+import GradesPage from './components/pages/GradesPage';
+import StudentsPage from './components/pages/StudentsPage';
+import ReportsPage from './components/pages/ReportsPage';
+import ProfilePage from './components/pages/ProfilePage';
+import SettingsPage from './components/pages/SettingsPage';
 import { authAPI } from './services/api';
 import { useErrorHandler } from './hooks/useErrorHandler';
 import { Toaster } from 'react-hot-toast';
@@ -32,41 +39,12 @@ function App() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string | undefined>>({});
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isOAuth2Callback, setIsOAuth2Callback] = useState(false);
-  const [currentPage, setCurrentPage] = useState('home');
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const { handleError, showSuccess, showError } = useErrorHandler();
 
   const handleModeChange = (mode: 'login' | 'register') => {
     setAuthMode(mode);
     setError(undefined);
     setValidationErrors({});
-  };
-
-  const handleNavigation = async (path: string) => {
-    if (path === '/admin/dashboard') {
-      try {
-        const userData = await authAPI.getCurrentUser();
-        setCurrentUser(userData);
-        
-        // Check if user has admin role
-        const userRole = userData.role || (userData.authorities && userData.authorities.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER');
-        
-        if (userRole === 'ADMIN') {
-          setCurrentPage('admin-dashboard');
-        } else {
-          showError('Bạn không có quyền truy cập trang này');
-          setCurrentPage('home');
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-        showError('Không thể xác thực quyền truy cập');
-        setCurrentPage('home');
-      }
-    } else if (path === '/') {
-      setCurrentPage('home');
-    } else {
-      setCurrentPage('home'); // Default to home for other paths
-    }
   };
 
   // Check if user is already authenticated on app load
@@ -92,12 +70,6 @@ function App() {
         
         if (token) {
           console.log('App.tsx: Valid access token found, setting authenticated=true');
-          try {
-            const userData = await authAPI.getCurrentUser();
-            setCurrentUser(userData);
-          } catch (error) {
-            console.error('Error fetching user data:', error);
-          }
           setIsAuthenticated(true);
         } else if (refreshToken) {
           console.log('App.tsx: No access token but refresh token found, attempting refresh...');
@@ -156,17 +128,11 @@ function App() {
       });
       
       if (token && refreshToken) {
-        try {
-          const userData = await authAPI.getCurrentUser();
-          setCurrentUser(userData);
-        } catch (error) {
-          console.error('Error fetching user data after OAuth2:', error);
-        }
         setIsAuthenticated(true);
         console.log('OAuth2 authentication successful, redirecting to home');
         
         // Clear the URL completely to remove OAuth2 callback parameters
-        window.history.replaceState({}, document.title, window.location.pathname);
+        window.history.replaceState({}, document.title, '/');
         
         // Optional: Show success message
         showSuccess('Đăng nhập Google thành công!');
@@ -200,13 +166,6 @@ function App() {
 
       const response = await authAPI.login(loginData);
       console.log('Login successful:', response);
-      
-      try {
-        const userData = await authAPI.getCurrentUser();
-        setCurrentUser(userData);
-      } catch (error) {
-        console.error('Error fetching user data after login:', error);
-      }
       
       setIsAuthenticated(true);
       showSuccess('Đăng nhập thành công!');
@@ -309,7 +268,12 @@ function App() {
             },
           }}
         />
-        <OAuth2Callback onSuccess={handleOAuth2Success} onError={handleOAuth2Error} />
+        <Routes>
+          <Route path="/oauth2/callback" element={
+            <OAuth2Callback onSuccess={handleOAuth2Success} onError={handleOAuth2Error} />
+          } />
+          <Route path="*" element={<Navigate to="/oauth2/callback" replace />} />
+        </Routes>
       </div>
     );
   }
@@ -352,11 +316,49 @@ function App() {
             },
           }}
         />
-        {currentPage === 'admin-dashboard' ? (
-          <AdminDashboard onLogout={handleLogout} onNavigate={handleNavigation} />
-        ) : (
-          <Home onLogout={handleLogout} onNavigate={handleNavigation} />
-        )}
+        <Routes>
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Home onLogout={handleLogout} />
+            </ProtectedRoute>
+          } />
+          <Route path="/assignments" element={
+            <ProtectedRoute>
+              <AssignmentsPage onLogout={handleLogout} />
+            </ProtectedRoute>
+          } />
+          <Route path="/grades" element={
+            <ProtectedRoute>
+              <GradesPage onLogout={handleLogout} />
+            </ProtectedRoute>
+          } />
+          <Route path="/students" element={
+            <ProtectedRoute>
+              <StudentsPage onLogout={handleLogout} />
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute>
+              <ReportsPage onLogout={handleLogout} />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <ProfilePage onLogout={handleLogout} />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <SettingsPage onLogout={handleLogout} />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/dashboard" element={
+            <ProtectedRoute requireAdmin={true}>
+              <AdminDashboard onLogout={handleLogout} />
+            </ProtectedRoute>
+          } />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </div>
     );
   }
@@ -384,17 +386,25 @@ function App() {
           },
         }}
       />
-      <Auth 
-        onLogin={handleLogin}
-        onRegister={handleRegister}
-        onGoogleLogin={handleGoogleLogin}
-        loading={loading}
-        googleLoading={googleLoading}
-        error={error}
-        validationErrors={validationErrors}
-        initialMode={authMode}
-        onModeChange={handleModeChange}
-      />
+      <Routes>
+        <Route path="/login" element={
+          <Auth 
+            onLogin={handleLogin}
+            onRegister={handleRegister}
+            onGoogleLogin={handleGoogleLogin}
+            loading={loading}
+            googleLoading={googleLoading}
+            error={error}
+            validationErrors={validationErrors}
+            initialMode={authMode}
+            onModeChange={handleModeChange}
+          />
+        } />
+        <Route path="/oauth2/callback" element={
+          <OAuth2Callback onSuccess={handleOAuth2Success} onError={handleOAuth2Error} />
+        } />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
     </div>
   );
 }

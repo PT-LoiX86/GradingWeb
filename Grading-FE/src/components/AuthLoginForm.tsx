@@ -20,8 +20,8 @@ const AuthLoginForm: React.FC<{
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>();
 
   return (
-    <div className="w-full max-w-md">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-lg bg-white rounded-xl shadow-lg border border-gray-200 p-8">
           {/* Logo */}
           <div className="flex items-center justify-center mb-8">
             <div className="flex items-center space-x-2">
@@ -46,54 +46,54 @@ const AuthLoginForm: React.FC<{
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
                 Username
               </label>
               <input
                 id="username"
                 type="text"
                 {...register('username', { required: 'Username is required' })}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                   errors.username || validationErrors.username 
-                    ? 'border-red-500' 
-                    : 'border-gray-300'
+                    ? 'border-red-500 bg-red-50' 
+                    : 'border-gray-300 hover:border-gray-400'
                 }`}
                 placeholder="Enter your username"
               />
               {errors.username && (
-                <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
+                <p className="mt-2 text-sm text-red-600">{errors.username.message}</p>
               )}
               {validationErrors.username && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.username}</p>
+                <p className="mt-2 text-sm text-red-600">{validationErrors.username}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                 Password
               </label>
               <input
                 id="password"
                 type="password"
                 {...register('password', { required: 'Password is required' })}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                   errors.password || validationErrors.password 
-                    ? 'border-red-500' 
-                    : 'border-gray-300'
+                    ? 'border-red-500 bg-red-50' 
+                    : 'border-gray-300 hover:border-gray-400'
                 }`}
                 placeholder="Enter your password"
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>
               )}
               {validationErrors.password && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
+                <p className="mt-2 text-sm text-red-600">{validationErrors.password}</p>
               )}
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mt-4">
               <div className="flex items-center">
                 <input
                   id="remember"
@@ -107,7 +107,7 @@ const AuthLoginForm: React.FC<{
               </div>
               <a
                 href="#"
-                className="text-sm text-blue-600 hover:text-blue-500"
+                className="text-sm text-blue-600 hover:text-blue-500 font-medium"
               >
                 Forgot password
               </a>
@@ -116,17 +116,17 @@ const AuthLoginForm: React.FC<{
             <ShadCNButton
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200 h-[44px] flex items-center justify-center"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 h-[48px] flex items-center justify-center shadow-md hover:shadow-lg"
             >
-              {loading ? 'Signing in...' : 'Sign up'}
+              {loading ? 'Signing in...' : 'Sign in'}
             </ShadCNButton>
 
-            <div className="relative">
+            <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">hoặc</span>
+                <span className="px-4 bg-white text-gray-500 font-medium">hoặc</span>
               </div>
             </div>
 
@@ -134,7 +134,7 @@ const AuthLoginForm: React.FC<{
               type="button"
               onClick={onGoogleLogin}
               disabled={googleLoading}
-              className="w-full bg-white border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-50 transition duration-200 h-[44px] flex items-center justify-center space-x-2 focus:outline-none focus:ring-0"
+              className="w-full bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-50 transition duration-200 h-[48px] flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm hover:shadow-md"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

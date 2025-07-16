@@ -16,10 +16,9 @@ import {
 
 interface AdminDashboardProps {
   onLogout: () => Promise<void>;
-  onNavigate: (path: string) => void;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavigate }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const stats = [
     {
       title: 'Tổng người dùng',
@@ -63,7 +62,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavigate })
   ];
 
   return (
-    <Layout onLogout={onLogout} onNavigate={onNavigate}>
+    <Layout onLogout={onLogout}>
       {/* Header */}
       <div className="bg-white shadow-sm border-b rounded-lg mb-8">
         <div className="px-6 py-6">

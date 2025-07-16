@@ -4,12 +4,11 @@ import Dashboard from './Dashboard';
 
 interface HomeProps {
   onLogout: () => Promise<void>;
-  onNavigate: (path: string) => void;
 }
 
-const Home: React.FC<HomeProps> = ({ onLogout, onNavigate }) => {
+const Home: React.FC<HomeProps> = ({ onLogout }) => {
   return (
-    <Layout onLogout={onLogout} onNavigate={onNavigate}>
+    <Layout onLogout={onLogout}>
       <Dashboard />
     </Layout>
   );

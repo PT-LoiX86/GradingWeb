@@ -5,14 +5,13 @@ import Footer from './Footer';
 interface LayoutProps {
   children: React.ReactNode;
   onLogout: () => Promise<void>;
-  onNavigate: (path: string) => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, onLogout, onNavigate }) => {
+const Layout: React.FC<LayoutProps> = ({ children, onLogout }) => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header với full width */}
-      <Header onLogout={onLogout} onNavigate={onNavigate} />
+      <Header onLogout={onLogout} />
       
       {/* Main content với padding 2 bên */}
       <main className="flex-1 w-full">

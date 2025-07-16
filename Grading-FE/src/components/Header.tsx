@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Search, User, Menu, X, LogOut, Settings, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import { authAPI } from '../services/api';
 
 interface HeaderProps {
   onLogout: () => Promise<void>;
-  onNavigate?: (path: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onLogout, onNavigate }) => {
+const Header: React.FC<HeaderProps> = ({ onLogout }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Get current user info
   useEffect(() => {
@@ -27,9 +28,7 @@ const Header: React.FC<HeaderProps> = ({ onLogout, onNavigate }) => {
   };
 
   const handleNavigation = (path: string) => {
-    if (onNavigate) {
-      onNavigate(path);
-    }
+    navigate(path);
   };
 
   // Close user menu when clicking outside
