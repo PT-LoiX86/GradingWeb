@@ -1,8 +1,9 @@
 package com.grd.gradingbe.controller;
 
-import com.grd.gradingbe.dto.request.CreateCommentRequest;
-import com.grd.gradingbe.dto.request.CreatePostRequest;
-import com.grd.gradingbe.dto.request.UpdatePostRequest;
+import com.grd.gradingbe.dto.enums.Role;
+import com.grd.gradingbe.dto.request.ForumChannelRequest;
+import com.grd.gradingbe.dto.request.ForumCommentRequest;
+import com.grd.gradingbe.dto.request.ForumPostRequest;
 import com.grd.gradingbe.dto.response.*;
 import com.grd.gradingbe.service.ForumChannelService;
 import com.grd.gradingbe.service.ForumCommentService;
@@ -17,6 +18,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -36,42 +39,35 @@ public class ForumController
         this.forumPostService = forumPostService;
     }
 
+    //Post crud
+
     @Operation(
-            summary = "Get all forum's categories",
-            description = "Retrieve a paginated list of all categories"
+            summary = "Get forum post by id",
+            description = "Retrieve a post data"
     )
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
-                    description = "Successfully retrieved all categories",
+                    description = "Successfully retrieved the post",
                     content = @Content(
                             mediaType = "application/json",
                             schema = @Schema(implementation = ApiResponse.class)
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid request"
+                    responseCode = "404",
+                    description = "Comment not found"
             )
     })
-    @GetMapping("/categories")
-    public ResponseEntity<ApiResponse<PageResponse<ChannelResponse>>> getChannels(
-            @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size", example = "10")
-            @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "Sort by field", example = "name")
-            @RequestParam(defaultValue = "id") String sortBy,
-            @Parameter(description = "Sort direction (asc/desc)", example = "asc")
-            @RequestParam(defaultValue = "asc") String sortDir,
-            @Parameter(description = "Search keyword for major name or code")
-            @RequestParam(required = false) String search
-    )
+    @GetMapping("/posts/{id}")
+    public ResponseEntity<ApiResponse<PostResponse>> getPost(
+            @Parameter(description = "Post id", example = "0")
+            @PathVariable Long id)
     {
-        PageResponse<ChannelResponse> channelResponse = forumChannelService.getChannels(page, size, sortBy, sortDir, search);
+        PostResponse postResponse = forumPostService.getPost(id);
 
         return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
-                "Successfully retrieved all categories", channelResponse
+                "Successfully retrieved the post", postResponse
         ));
     }
 
@@ -103,7 +99,7 @@ public class ForumController
             @RequestParam(defaultValue = "id") String sortBy,
             @Parameter(description = "Sort direction (asc/desc)", example = "asc")
             @RequestParam(defaultValue = "asc") String sortDir,
-            @Parameter(description = "Search keyword for major name or code")
+            @Parameter(description = "Search keyword for post title")
             @RequestParam(required = false) String search)
     {
         PageResponse<PostResponse> postResponse = forumPostService.getPosts(page, size, sortBy, sortDir, search);
@@ -132,14 +128,14 @@ public class ForumController
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "404",
-                    description = "Categories not found"
+                    description = "Channel not found"
             )
     })
     @PostMapping("/posts")
     public ResponseEntity<ApiResponse<PostResponse>> createPost(
             Principal principal,
             @Parameter(description = "Post creating request data", required = true)
-            @Valid @RequestBody CreatePostRequest request)
+            @Valid @RequestBody ForumPostRequest request)
     {
         PostResponse postResponse = forumPostService.createPost(Integer.parseInt(principal.getName()), request);
 
@@ -176,7 +172,7 @@ public class ForumController
             @Parameter(description = "Post ID", required = true, example = "1")
             @PathVariable Long id,
             @Parameter(description = "Post editing request data", required = true)
-            @Valid @RequestBody UpdatePostRequest request)
+            @Valid @RequestBody ForumPostRequest request)
     {
         PostResponse postResponse = forumPostService.updatePost(Integer.parseInt(principal.getName()), id, request);
 
@@ -191,7 +187,7 @@ public class ForumController
     )
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "204",
+                    responseCode = "200",
                     description = "Successfully delete the post",
                     content = @Content(
                             mediaType = "application/json",
@@ -205,13 +201,21 @@ public class ForumController
     })
     @DeleteMapping("/posts/{id}")
     public ResponseEntity<ApiResponse<Void>> deletePost(
-            Principal principal,
+            Authentication authentication,
             @Parameter(description = "Post ID", required = true, example = "1")
             @PathVariable Long id)
     {
-        forumPostService.deletePost(Integer.parseInt(principal.getName()),  id);
+        if (authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_" + Role.ADMIN.name())))
+        {
+            forumPostService.deletePost(id);
+        }
+        else
+        {
+            forumPostService.deletePost(Integer.parseInt(authentication.getName()),  id);
+        }
 
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiResponse.success(
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
                 "Successfully deleted the post", null
         ));
     }
@@ -236,13 +240,47 @@ public class ForumController
     })
     @PostMapping("/posts/{id}/like")
     public ResponseEntity<ApiResponse<Void>> likePost(
+            @Parameter(description = "Like or Unlike", required = true, example = "1 as Like, -1 as Unlike")
+            @RequestParam int like,
             @Parameter(description = "Post ID", required = true, example = "1")
             @PathVariable Long id)
     {
-        forumPostService.likePost(id);
+        forumPostService.likePost(id, like);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
                 "Successfully added a like to the post", null
+        ));
+    }
+
+    //Comment crud
+
+    @Operation(
+            summary = "Get forum comment by id",
+            description = "Retrieve a comment data"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved the comment",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponse.class)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "Comment not found"
+            )
+    })
+    @GetMapping("/comments/{id}")
+    public ResponseEntity<ApiResponse<CommentResponse>> getComment(
+            @Parameter(description = "Comment id", example = "0")
+            @PathVariable Long id)
+    {
+        CommentResponse commentResponse = forumCommentService.getComment(id);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
+                "Successfully retrieved the comment", commentResponse
         ));
     }
 
@@ -273,11 +311,9 @@ public class ForumController
             @Parameter(description = "Sort by field", example = "name")
             @RequestParam(defaultValue = "id") String sortBy,
             @Parameter(description = "Sort direction (asc/desc)", example = "asc")
-            @RequestParam(defaultValue = "asc") String sortDir,
-            @Parameter(description = "Search keyword for major name or code")
-            @RequestParam(required = false) String search)
+            @RequestParam(defaultValue = "asc") String sortDir)
     {
-        PageResponse<CommentResponse> commentResponse = forumCommentService.getComments(page, size, sortBy, sortDir, search);
+        PageResponse<CommentResponse> commentResponse = forumCommentService.getComments(page, size, sortBy, sortDir);
 
         return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
                 "Successfully retrieved all comments", commentResponse
@@ -310,7 +346,7 @@ public class ForumController
     public ResponseEntity<ApiResponse<CommentResponse>> commentPost(
             Principal principal,
             @Parameter(description = "Commenting request data", required = true)
-            @Valid @RequestBody CreateCommentRequest request)
+            @Valid @RequestBody ForumCommentRequest request)
     {
         CommentResponse commentResponse = forumCommentService.createComment(Integer.parseInt(principal.getName()), request);
 
@@ -320,12 +356,48 @@ public class ForumController
     }
 
     @Operation(
+            summary = "Edit a comment",
+            description = "Edit the provided comment"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully edit the comment",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponse.class)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request parameters"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "Comment not found")
+    })
+    @PutMapping("/comments/{id}")
+    public ResponseEntity<ApiResponse<CommentResponse>> updateComment(
+            Principal principal,
+            @Parameter(description = "Comment ID", required = true, example = "1")
+            @PathVariable Long id,
+            @Parameter(description = "Comment editing request data", required = true)
+            @Valid @RequestBody ForumCommentRequest request)
+    {
+        CommentResponse commentResponse = forumCommentService.updateComment(Integer.parseInt(principal.getName()), id, request);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
+                "Successfully updated the comment", commentResponse
+        ));
+    }
+
+    @Operation(
             summary = "Delete a comment",
             description = "Delete comment from the provided post"
     )
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "204",
+                    responseCode = "200",
                     description = "Successfully delete the comment",
                     content = @Content(
                             mediaType = "application/json",
@@ -339,13 +411,21 @@ public class ForumController
     })
     @DeleteMapping("/comments/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteComment(
-            Principal principal,
+            Authentication authentication,
             @Parameter(description = "Comment ID", required = true, example = "1")
             @PathVariable Long id)
     {
-        forumCommentService.deleteComment(Integer.parseInt(principal.getName()),  id);
+        if (authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_" + Role.ADMIN.name())))
+        {
+            forumCommentService.deleteComment(id);
+        }
+        else
+        {
+            forumCommentService.deleteComment(Integer.parseInt(authentication.getName()),  id);
+        }
 
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(ApiResponse.success(
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
                 "Successfully deleted the comment", null
         ));
     }
@@ -370,13 +450,185 @@ public class ForumController
     })
     @PostMapping("/comments/{id}/like")
     public ResponseEntity<ApiResponse<Void>> likeComment(
+            @Parameter(description = "Like or Unlike", required = true, example = "1 as Like, -1 as Unlike")
+            @RequestParam int like,
             @Parameter(description = "Comment ID", required = true, example = "1")
             @PathVariable Long id)
     {
-        forumCommentService.likeComment(id);
+        forumCommentService.likeComment(id, like);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
                 "Successfully added a like to the comment", null
+        ));
+    }
+
+    //Channel crud
+
+    @Operation(
+            summary = "Get forum channel by id",
+            description = "Retrieve a channel data"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved the channel",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponse.class)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "Channel not found"
+            )
+    })
+    @GetMapping("/channels/{id}")
+    public ResponseEntity<ApiResponse<ChannelResponse>> getChannel(
+            @Parameter(description = "Channel id", example = "0")
+            @PathVariable Long id)
+    {
+        ChannelResponse channelResponse = forumChannelService.getChannel(id);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
+                "Successfully retrieved the post", channelResponse
+        ));
+    }
+
+    @Operation(
+            summary = "Get all forum's channel",
+            description = "Retrieve a paginated list of all channels"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved all channels",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponse.class)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request"
+            )
+    })
+    @GetMapping("/channels")
+    public ResponseEntity<ApiResponse<PageResponse<ChannelResponse>>> getChannels(
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size", example = "10")
+            @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Sort by field", example = "name")
+            @RequestParam(defaultValue = "id") String sortBy,
+            @Parameter(description = "Sort direction (asc/desc)", example = "asc")
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @Parameter(description = "Search keyword for channel name")
+            @RequestParam(required = false) String search
+    )
+    {
+        PageResponse<ChannelResponse> channelResponse = forumChannelService.getChannels(page, size, sortBy, sortDir, search);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
+                "Successfully retrieved all channels", channelResponse
+        ));
+    }
+
+    @Operation(
+            summary = "Create a channel",
+            description = "Create a channel with required information"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "201",
+                    description = "Successfully created a channel",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponse.class)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request parameters"
+            )
+    })
+    @PostMapping("/channels")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ChannelResponse>> createChannel(
+            @Parameter(description = "Channel creating request data", required = true)
+            @Valid @RequestBody ForumChannelRequest request)
+    {
+        ChannelResponse channelResponse = forumChannelService.createChannel(request);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(
+                "Successfully created a channel", channelResponse
+        ));
+    }
+
+    @Operation(
+            summary = "Edit a channel",
+            description = "Edit information of the provided channel"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully edit the channel",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponse.class)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request parameters"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "Channel not found"
+            )
+    })
+    @PutMapping("/channels/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ChannelResponse>> updateChannel(
+            @Parameter(description = "Channel ID", required = true, example = "1")
+            @PathVariable Long id,
+            @Parameter(description = "Channel editing request data", required = true)
+            @Valid @RequestBody ForumChannelRequest request)
+    {
+        ChannelResponse channelResponse = forumChannelService.updateChannel(id, request);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
+                "Successfully updated the post", channelResponse
+        ));
+    }
+
+    @Operation(
+            summary = "Delete a channel",
+            description = "Delete the provided channel"
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully delete the channel",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponse.class)
+                    )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "404",
+                    description = "Channel not found"
+            )
+    })
+    @DeleteMapping("/channels/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteChannel(
+            @Parameter(description = "Channel ID", required = true, example = "1")
+            @PathVariable Long id)
+    {
+        forumChannelService.deleteChannel(id);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ApiResponse.success(
+                "Successfully deleted the channel", null
         ));
     }
 }

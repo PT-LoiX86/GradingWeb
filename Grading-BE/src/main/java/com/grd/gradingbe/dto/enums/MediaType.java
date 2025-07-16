@@ -1,13 +1,13 @@
 package com.grd.gradingbe.dto.enums;
 
-public enum MailType
+public enum MediaType
 {
-    REGISTRATION("registration"),
-    CHANGE_PASSWORD("change_password");
+    IMAGE("image"),
+    VIDEO("video");
 
     private final String type;
 
-    MailType(String type)
+    MediaType(String type)
     {
         this.type = type;
     }

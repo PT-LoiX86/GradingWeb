@@ -4,22 +4,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
 @Builder
-@Schema(name = "CategoryResponse", description = "Response payload containing category information")
+@Schema(name = "ChannelResponse", description = "Response payload containing channel information")
 public record ChannelResponse(
-        @Schema(description = "Unique identifier of the category", example = "1")
+        @Schema(description = "Unique identifier of the channel", example = "1")
         Long id,
 
-        @Schema(description = "Name of the category", example = "Q&A")
+        @Schema(description = "Name of the channel", example = "Q&A")
         String name,
 
-        @Schema(description = "Description of the category", example = "Quest and Answer about how to be rich")
+        @Schema(description = "Description of the channel", example = "Quest and Answer about how to be rich")
         String description,
 
-        @Schema(description = "Slug of the category", example = "question-and-answer")
+        @Schema(description = "Slug of the channel", example = "question-and-answer")
         String slug,
 
         @Schema(description = "Is the channel active", example = "true")
-        Boolean is_active,
+        Boolean isActive,
 
         @Schema(description = "Creation timestamp", example = "2024-01-01T10:00:00")
         String createdAt,

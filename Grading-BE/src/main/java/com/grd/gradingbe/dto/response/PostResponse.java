@@ -1,7 +1,10 @@
 package com.grd.gradingbe.dto.response;
 
+import com.grd.gradingbe.dto.request.ForumMediaRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
+
+import java.util.List;
 
 @Builder
 @Schema(name = "PostResponse", description = "Response payload containing post information")
@@ -10,10 +13,10 @@ public record PostResponse(
         Long id,
 
         @Schema(description = "Id of the post's category", example = "1")
-        Long channel_id,
+        Long channelId,
 
         @Schema(description = "Id of the post's creator", example = "1")
-        Integer creator_id,
+        Integer creatorId,
 
         @Schema(description = "Title of the post", example = "How to become a billionaire?")
         String title,
@@ -21,17 +24,20 @@ public record PostResponse(
         @Schema(description = "Content of the post", example = "Any ideas of how to be rich?")
         String content,
 
+        @Schema(description = "List of comment's media")
+        List<ForumMediaRequest> mediaList,
+
         @Schema(description = "Is the post pinned", example = "true")
-        Boolean is_pinned,
+        Boolean isPinned,
 
         @Schema(description = "Is the post locked", example = "true")
-        Boolean is_locked,
+        Boolean isLocked,
 
         @Schema(description = "Number of likes of the post", example = "0")
-        Long like_count,
+        Long likeCount,
 
         @Schema(description = "Number of comments of the post", example = "0")
-        Long comment_count,
+        Long commentCount,
 
         @Schema(description = "Creation timestamp", example = "2024-01-01T10:00:00")
         String createdAt,

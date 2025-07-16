@@ -72,7 +72,7 @@ public class JwtServiceImpl implements JwtService
     public String generatePayloadToken(User user, Map<String, Object> claims, long time, ChronoUnit unit)
     {
         Instant now = Instant.now();
-        Instant refreshTokenExpiry = now.plus(refreshTokenExpiryDays, ChronoUnit.DAYS);
+        Instant payloadTokenExpiry = now.plus(time, unit);
         
         return Jwts.builder()
                 .header().add("typ", "payload")
@@ -81,7 +81,7 @@ public class JwtServiceImpl implements JwtService
                 .issuer(serverIss)
                 .subject(user.getId().toString())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(refreshTokenExpiry))
+                .expiration(Date.from(payloadTokenExpiry))
                 .signWith(key, Jwts.SIG.HS512)
                 .compact();
     }
@@ -108,7 +108,7 @@ public class JwtServiceImpl implements JwtService
         {
             return extractClaim(type, token, Claims::getExpiration).before(Date.from(Instant.now()));
         }
-        catch (ExpiredJwtException e)
+        catch (Exception e)
         {
             return true;
         }

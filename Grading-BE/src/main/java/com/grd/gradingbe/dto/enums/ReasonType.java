@@ -1,13 +1,15 @@
 package com.grd.gradingbe.dto.enums;
 
-public enum MailType
+public enum ReasonType
 {
-    REGISTRATION("registration"),
-    CHANGE_PASSWORD("change_password");
+    SPAM("spam"),
+    ABUSIVE("abusive"),
+    OFFENSIVE("offensive"),
+    OFF_TOPIC("off_topic");
 
     private final String type;
 
-    MailType(String type)
+    ReasonType(String type)
     {
         this.type = type;
     }

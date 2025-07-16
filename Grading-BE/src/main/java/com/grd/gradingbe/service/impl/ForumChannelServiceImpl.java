@@ -1,7 +1,9 @@
 package com.grd.gradingbe.service.impl;
 
+import com.grd.gradingbe.dto.request.ForumChannelRequest;
 import com.grd.gradingbe.dto.response.ChannelResponse;
 import com.grd.gradingbe.dto.response.PageResponse;
+import com.grd.gradingbe.exception.ResourceNotFoundException;
 import com.grd.gradingbe.model.ForumChannel;
 import com.grd.gradingbe.repository.ForumChannelRepository;
 import com.grd.gradingbe.service.ForumChannelService;
@@ -12,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ForumChannelServiceImpl implements ForumChannelService
@@ -28,7 +31,7 @@ public class ForumChannelServiceImpl implements ForumChannelService
         Sort sorter = sortBy.equalsIgnoreCase(Sort.Direction.ASC.name())
                 ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sorter);
-        Page<ForumChannel> channelPages = forumChannelRepository.findAll(pageable);
+        Page<ForumChannel> channelPages = forumChannelRepository.findAllByName(pageable, search);
         List<ForumChannel> channelContents = channelPages.getContent();
 
         return PageResponse.<ChannelResponse>builder()
@@ -39,6 +42,47 @@ public class ForumChannelServiceImpl implements ForumChannelService
                 .totalPages(channelPages.getTotalPages())
                 .last(channelPages.isLast())
                 .build();
+    }
+
+    public ChannelResponse getChannel(Long id)
+    {
+        ForumChannel forumChannel = forumChannelRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Channel", "Id", id.toString()));
+
+        return (responseMapping(forumChannel));
+    }
+
+    public ChannelResponse createChannel(ForumChannelRequest request)
+    {
+        ForumChannel forumChannel = ForumChannel.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .slug(request.getSlug())
+                .is_active(true)
+                .build();
+
+        return responseMapping(forumChannelRepository.save(forumChannel));
+    }
+
+    public ChannelResponse updateChannel(Long id, ForumChannelRequest request)
+    {
+        ForumChannel forumChannel = forumChannelRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Channel", "Id", id.toString()));
+
+        Optional.ofNullable(request.getName()).ifPresent(forumChannel::setName);
+        Optional.ofNullable(request.getDescription()).ifPresent(forumChannel::setDescription);
+        Optional.ofNullable(request.getSlug()).ifPresent(forumChannel::setSlug);
+        Optional.ofNullable(request.getIsActive()).ifPresent(forumChannel::setIs_active);
+
+        return responseMapping(forumChannelRepository.save(forumChannel));
+    }
+
+    public void deleteChannel(Long id)
+    {
+        forumChannelRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Channel", "Id", id.toString()));
+
+        forumChannelRepository.deleteById(id);
     }
 
     private List<ChannelResponse> responseMapping(List<ForumChannel> channelContents) {
@@ -53,7 +97,7 @@ public class ForumChannelServiceImpl implements ForumChannelService
                 .name(forumChannel.getName())
                 .description(forumChannel.getDescription())
                 .slug(forumChannel.getSlug())
-                .is_active(forumChannel.getIs_active())
+                .isActive(forumChannel.getIs_active())
                 .createdAt(String.valueOf(forumChannel.getCreatedAt()))
                 .createdBy(forumChannel.getCreatedBy())
                 .updatedAt(String.valueOf(forumChannel.getUpdatedAt()))
