@@ -1,18 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Search, User, Menu, X, LogOut, Settings } from 'lucide-react';
+import { Bell, Search, User, Menu, X, LogOut, Settings, Shield } from 'lucide-react';
+import { authAPI } from '../services/api';
 
 interface HeaderProps {
   onLogout: () => Promise<void>;
+  onNavigate?: (path: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ onLogout, onNavigate }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Get current user info
+  useEffect(() => {
+    const user = authAPI.getCurrentUser();
+    setCurrentUser(user);
+  }, []);
+
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   const handleLogout = async () => {
     setIsUserMenuOpen(false);
     await onLogout();
+  };
+
+  const handleNavigation = (path: string) => {
+    if (onNavigate) {
+      onNavigate(path);
+    }
   };
 
   // Close user menu when clicking outside
@@ -30,8 +47,8 @@ const Header: React.FC<HeaderProps> = ({ onLogout }) => {
   }, []);
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 w-full">
+      <div className=" mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
@@ -45,20 +62,44 @@ const Header: React.FC<HeaderProps> = ({ onLogout }) => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
-            <a href="#" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              Dashboard
+            <a 
+              onClick={() => handleNavigation('/')}
+              className="text-blue-600 hover:text-blue-800 px-3 py-2 text-sm font-medium transition-colors cursor-pointer"
+            >
+              Trang chủ
             </a>
-            <a href="#" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              Assignments
+            {isAdmin && (
+              <a 
+                onClick={() => handleNavigation('/admin/dashboard')}
+                className="text-blue-600 hover:text-blue-800 px-3 py-2 text-sm font-medium transition-colors cursor-pointer flex items-center space-x-1"
+              >
+                <Shield className="w-4 h-4" />
+                <span>Dashboard</span>
+              </a>
+            )}
+            <a 
+              onClick={() => handleNavigation('/assignments')}
+              className="text-blue-600 hover:text-blue-800 px-3 py-2 text-sm font-medium transition-colors cursor-pointer"
+            >
+              Bài tập
             </a>
-            <a href="#" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              Grades
+            <a 
+              onClick={() => handleNavigation('/grades')}
+              className="text-blue-600 hover:text-blue-800 px-3 py-2 text-sm font-medium transition-colors cursor-pointer"
+            >
+              Điểm số
             </a>
-            <a href="#" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              Students
+            <a 
+              onClick={() => handleNavigation('/students')}
+              className="text-blue-600 hover:text-blue-800 px-3 py-2 text-sm font-medium transition-colors cursor-pointer"
+            >
+              Học sinh
             </a>
-            <a href="#" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-              Reports
+            <a 
+              onClick={() => handleNavigation('/reports')}
+              className="text-blue-600 hover:text-blue-800 px-3 py-2 text-sm font-medium transition-colors cursor-pointer"
+            >
+              Báo cáo
             </a>
           </nav>
 
@@ -84,32 +125,77 @@ const Header: React.FC<HeaderProps> = ({ onLogout }) => {
             <div className="relative" ref={userMenuRef}>
               <button 
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex items-center space-x-2 rounded-full bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-none transition-all duration-200"
               >
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <div className="p-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                   <User className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-sm font-medium text-gray-700">John Doe</span>
+                <div className="hidden sm:block">
+                  <span className="text-sm font-medium text-gray-700">
+                    {currentUser?.fullName || currentUser?.username || 'User'}
+                  </span>
+                  {isAdmin && (
+                    <div className="text-xs text-blue-600 font-medium">Admin</div>
+                  )}
+                </div>
+                <svg className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isUserMenuOpen ? 'transform rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
               
               {/* User dropdown menu */}
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                <div className="absolute right-0 mt-3 w-60 rounded-xl shadow-xl bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 border border-gray-100 overflow-hidden">
                   <div className="py-1">
-                    <button
-                      onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <Settings className="w-4 h-4 mr-3" />
-                      Settings
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <LogOut className="w-4 h-4 mr-3" />
-                      Logout
-                    </button>
+                    <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                          <User className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-gray-900">
+                            {currentUser?.fullName || currentUser?.username || 'User'}
+                          </p>
+                          <p className="text-xs text-gray-600">{currentUser?.email || ''}</p>
+                          {isAdmin && (
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full mt-1">
+                              <Shield className="w-3 h-3 mr-1" />
+                              Admin
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          handleNavigation('/profile');
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors group"
+                      >
+                        <User className="w-4 h-4 mr-3 text-gray-400 group-hover:text-blue-500" />
+                        <span>Hồ sơ cá nhân</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleNavigation('/settings');
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors group"
+                      >
+                        <Settings className="w-4 h-4 mr-3 text-gray-400 group-hover:text-blue-500" />
+                        <span>Cài đặt</span>
+                      </button>
+                      <hr className="my-1 border-gray-200" />
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors group"
+                      >
+                        <LogOut className="w-4 h-4 mr-3 text-red-500 group-hover:text-red-700" />
+                        <span>Đăng xuất</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -136,46 +222,84 @@ const Header: React.FC<HeaderProps> = ({ onLogout }) => {
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-gray-200">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white">
-            <a href="#" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md">
-              Dashboard
+            <a 
+              onClick={() => handleNavigation('/')}
+              className="block w-full text-left px-3 py-2 text-base font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
+            >
+              Trang chủ
             </a>
-            <a href="#" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md">
-              Assignments
+            {isAdmin && (
+              <a 
+                onClick={() => handleNavigation('/admin/dashboard')}
+                className="flex items-center w-full px-3 py-2 text-base font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
+              >
+                <Shield className="w-5 h-5 mr-2" />
+                Dashboard
+              </a>
+            )}
+            <a 
+              onClick={() => handleNavigation('/assignments')}
+              className="block w-full text-left px-3 py-2 text-base font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
+            >
+              Bài tập
             </a>
-            <a href="#" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md">
-              Grades
+            <a 
+              onClick={() => handleNavigation('/grades')}
+              className="block w-full text-left px-3 py-2 text-base font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
+            >
+              Điểm số
             </a>
-            <a href="#" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md">
-              Students
+            <a 
+              onClick={() => handleNavigation('/students')}
+              className="block w-full text-left px-3 py-2 text-base font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
+            >
+              Học sinh
             </a>
-            <a href="#" className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md">
-              Reports
+            <a 
+              onClick={() => handleNavigation('/reports')}
+              className="block w-full text-left px-3 py-2 text-base font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
+            >
+              Báo cáo
             </a>
           </div>
-          <div className="pt-4 pb-3 border-t border-gray-200">
+          <div className="pt-4 pb-3 border-t border-gray-200 bg-gray-50">
             <div className="px-5 flex items-center">
-              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
                 <User className="w-5 h-5 text-white" />
               </div>
               <div className="ml-3">
-                <div className="text-base font-medium text-gray-800">John Doe</div>
-                <div className="text-sm text-gray-500">john@example.com</div>
+                <div className="text-base font-medium text-gray-800">
+                  {currentUser?.fullName || currentUser?.username || 'User'}
+                </div>
+                <div className="text-sm text-gray-500">{currentUser?.email || ''}</div>
+                {isAdmin && (
+                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full mt-1">
+                    Admin
+                  </span>
+                )}
               </div>
             </div>
             <div className="mt-3 px-2 space-y-1">
               <button
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center w-full px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md"
+                onClick={() => handleNavigation('/profile')}
+                className="flex items-center w-full px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+              >
+                <User className="w-5 h-5 mr-3" />
+                Hồ sơ
+              </button>
+              <button
+                onClick={() => handleNavigation('/settings')}
+                className="flex items-center w-full px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
               >
                 <Settings className="w-5 h-5 mr-3" />
-                Settings
+                Cài đặt
               </button>
               <button
                 onClick={handleLogout}
-                className="flex items-center w-full px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md"
+                className="flex items-center w-full px-3 py-2 text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
               >
                 <LogOut className="w-5 h-5 mr-3" />
-                Logout
+                Đăng xuất
               </button>
             </div>
           </div>

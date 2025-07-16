@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router';
 import { Auth, Home } from './components';
+import AdminDashboard from './components/AdminDashboard';
 import { authAPI } from './services/api';
 import { useErrorHandler } from './hooks/useErrorHandler';
 import { Toaster } from 'react-hot-toast';
@@ -31,12 +32,41 @@ function App() {
   const [validationErrors, setValidationErrors] = useState<Record<string, string | undefined>>({});
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isOAuth2Callback, setIsOAuth2Callback] = useState(false);
+  const [currentPage, setCurrentPage] = useState('home');
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const { handleError, showSuccess, showError } = useErrorHandler();
 
   const handleModeChange = (mode: 'login' | 'register') => {
     setAuthMode(mode);
     setError(undefined);
     setValidationErrors({});
+  };
+
+  const handleNavigation = async (path: string) => {
+    if (path === '/admin/dashboard') {
+      try {
+        const userData = await authAPI.getCurrentUser();
+        setCurrentUser(userData);
+        
+        // Check if user has admin role
+        const userRole = userData.role || (userData.authorities && userData.authorities.includes('ROLE_ADMIN') ? 'ADMIN' : 'USER');
+        
+        if (userRole === 'ADMIN') {
+          setCurrentPage('admin-dashboard');
+        } else {
+          showError('Bạn không có quyền truy cập trang này');
+          setCurrentPage('home');
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        showError('Không thể xác thực quyền truy cập');
+        setCurrentPage('home');
+      }
+    } else if (path === '/') {
+      setCurrentPage('home');
+    } else {
+      setCurrentPage('home'); // Default to home for other paths
+    }
   };
 
   // Check if user is already authenticated on app load
@@ -62,6 +92,12 @@ function App() {
         
         if (token) {
           console.log('App.tsx: Valid access token found, setting authenticated=true');
+          try {
+            const userData = await authAPI.getCurrentUser();
+            setCurrentUser(userData);
+          } catch (error) {
+            console.error('Error fetching user data:', error);
+          }
           setIsAuthenticated(true);
         } else if (refreshToken) {
           console.log('App.tsx: No access token but refresh token found, attempting refresh...');
@@ -120,6 +156,12 @@ function App() {
       });
       
       if (token && refreshToken) {
+        try {
+          const userData = await authAPI.getCurrentUser();
+          setCurrentUser(userData);
+        } catch (error) {
+          console.error('Error fetching user data after OAuth2:', error);
+        }
         setIsAuthenticated(true);
         console.log('OAuth2 authentication successful, redirecting to home');
         
@@ -158,6 +200,14 @@ function App() {
 
       const response = await authAPI.login(loginData);
       console.log('Login successful:', response);
+      
+      try {
+        const userData = await authAPI.getCurrentUser();
+        setCurrentUser(userData);
+      } catch (error) {
+        console.error('Error fetching user data after login:', error);
+      }
+      
       setIsAuthenticated(true);
       showSuccess('Đăng nhập thành công!');
     } catch (error) {
@@ -302,7 +352,11 @@ function App() {
             },
           }}
         />
-        <Home onLogout={handleLogout} />
+        {currentPage === 'admin-dashboard' ? (
+          <AdminDashboard onLogout={handleLogout} onNavigate={handleNavigation} />
+        ) : (
+          <Home onLogout={handleLogout} onNavigate={handleNavigation} />
+        )}
       </div>
     );
   }
