@@ -12,13 +12,14 @@ import {
   FileText,
   PieChart
 } from 'lucide-react';
+import PageContainer from './PageContainer';
 
 const Dashboard: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <PageContainer>
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg mb-8">
+        <div className="px-8 py-12">
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">Welcome to Grading</h1>
             <p className="text-xl text-blue-100 mb-8">Your comprehensive grading and assessment platform</p>
@@ -35,8 +36,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Stats Overview */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center">
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -238,8 +238,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </PageContainer>
   );
 };
 

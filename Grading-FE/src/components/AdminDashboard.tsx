@@ -64,24 +64,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavigate })
 
   return (
     <Layout onLogout={onLogout} onNavigate={onNavigate}>
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard Quản trị</h1>
-                <p className="text-gray-600">Chào mừng bạn đến với bảng điều khiển quản trị</p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <button className="relative p-2 text-gray-400 hover:text-gray-500">
-                  <Bell className="w-6 h-6" />
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white"></span>
-                </button>
-                <div className="flex items-center space-x-2">
-                  <Shield className="w-5 h-5 text-blue-500" />
-                  <span className="text-sm font-medium text-gray-700">Admin</span>
-                </div>
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b rounded-lg mb-8">
+        <div className="px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Dashboard Quản trị</h1>
+              <p className="text-gray-600">Chào mừng bạn đến với bảng điều khiển quản trị</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button className="relative p-2 text-gray-400 hover:text-gray-500">
+                <Bell className="w-6 h-6" />
+                <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 ring-2 ring-white"></span>
+              </button>
+              <div className="flex items-center space-x-2">
+                <Shield className="w-5 h-5 text-blue-500" />
+                <span className="text-sm font-medium text-gray-700">Admin</span>
               </div>
             </div>
           </div>
@@ -89,8 +87,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavigate })
       </div>
 
       {/* Stats Overview */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, index) => (
             <div key={index} className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
               <div className="flex items-center justify-between">
@@ -183,7 +180,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, onNavigate })
             </div>
           </div>
         </div>
-      </div>
     </Layout>
   );
 };
