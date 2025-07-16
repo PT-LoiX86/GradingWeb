@@ -40,11 +40,14 @@ spring:
             authorization-grant-type: authorization_code
             redirect-uri: ${env.app.backend.base-url}/login/oauth2/code/google
             scope: openid, profile, email
+            client-name: Google
         provider:
           google:
             authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
             token-uri: https://oauth2.googleapis.com/token
-            user-info-uri: https://openidconnect.googleapis.com/v1/
+            user-info-uri: https://openidconnect.googleapis.com/v1/userinfo
+            jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+            user-name-attribute: sub
   mail:
     host: smtp.gmail.com
     port: 587
@@ -89,10 +92,31 @@ env:
       base-url: http://localhost:8080
       oauth2-login-url: ${env.app.backend.base-url}/oauth2/authorization/google
     frontend:
-      base-url: http://localhost:5713
+      base-url: http://localhost:5173
       reset-password: http://localhost:5713/reset-password
   jwt:
     secret: ${JWT_SECRET}
     issuer: ${env.app.backend.base-url}
     refresh-token-validity-days: 7
     max-tokens-per-user: 5
+
+aws:
+  s3:
+    accessKey: ${AWS_ACCESS_KEY_ID}
+    secretKey: ${AWS_SECRET_ACCESS_KEY}
+    bucketName: ${AWS_S3_BUCKET_NAME}
+    endpoint: ${AWS_S3_ENDPOINT}
+
+app:
+  file-upload:
+    max-requests-per-minute: 10
+    max-files-per-request: 5
+    max-file-size: 10485760  # 10MB in bytes
+    allowed-extensions: 
+      - jpg
+      - jpeg
+      - png
+      - gif
+      - pdf
+      - doc
+      - docx

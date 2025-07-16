@@ -25,10 +25,4 @@ public class ValidationErrorResponse {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime errorTime;
 
-    public ValidationErrorResponse(String apiPath, HttpStatus errorCode, String errorMessage, LocalDateTime errorTime) {
-        this.apiPath = apiPath;
-        this.errorCode = errorCode;
-        this.errorMessage = errorMessage;
-        this.errorTime = errorTime;
-    }
 }

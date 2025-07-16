@@ -3,6 +3,10 @@ package com.grd.gradingbe.configuration;
 import com.grd.gradingbe.utilities.CustomAccessDeniedHandler;
 import com.grd.gradingbe.utilities.JwtFilter;
 import com.grd.gradingbe.utilities.OAuth2LoginSuccessHandler;
+
+import lombok.RequiredArgsConstructor;
+
+import com.grd.gradingbe.utilities.OAuth2LoginFailureHandler;
 import com.grd.gradingbe.service.impl.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -26,21 +30,15 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity()
+@RequiredArgsConstructor
 public class SecurityConfig
 {
     private final JwtFilter jwtFilter;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
     private final CustomUserDetailsService userDetailsService;
 
-    public SecurityConfig(JwtFilter jwtFilter, OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler, CustomUserDetailsService userDetailsService)
-    {
-        this.jwtFilter = jwtFilter;
-        this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
-        this.userDetailsService = userDetailsService;
-    }
-
-    @Value("${env.app.front-end.base-url}")
+    @Value("${env.app.frontend.base-url}")
     private String frontendURL;
 
     @Bean
@@ -56,7 +54,6 @@ public class SecurityConfig
     }
 
     @Bean
-    @SuppressWarnings("deprecation")
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
@@ -74,11 +71,10 @@ public class SecurityConfig
     public CorsConfigurationSource corsConfigurationSource()
     {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin(frontendURL);
-        configuration.addAllowedMethod("GET");
-        configuration.addAllowedMethod("POST");
-        configuration.addAllowedMethod("PUT");
-        configuration.addAllowedMethod("DELETE");
+        // Allow specific origins for credential support
+        configuration.addAllowedOrigin("http://localhost:5173");
+        configuration.addAllowedOrigin("https://accounts.google.com");
+        configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
 
@@ -93,11 +89,17 @@ public class SecurityConfig
     {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogin(false)
+                )
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**",
+                                        "/api/oauth2/**",
                                         "/oauth2/**",
+                                        "/login/oauth2/**",
                                         "/api/public/**",
                                         "/actuator/**",
                                         "/webjars/**",
@@ -107,13 +109,14 @@ public class SecurityConfig
                                         "/swagger-ui.html")
                         .permitAll()
 
-                        .requestMatchers("/api/admin/**")
+                        .requestMatchers("/api/admin/**", "/api/media/**")
                         .hasRole("ADMIN")
 
                         .anyRequest().hasAnyRole("USER", "ADMIN"))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2LoginSuccessHandler)
+                        .failureHandler(oAuth2LoginFailureHandler)
                 )
                 .exceptionHandling((exception)-> exception.accessDeniedHandler(accessDeniedHandler()))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()));

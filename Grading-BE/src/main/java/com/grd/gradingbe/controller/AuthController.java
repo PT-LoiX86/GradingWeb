@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +21,9 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    
+    @Value("${env.app.backend.oauth2-login-url}")
+    private String oauth2LoginUrl;
 
     @PostMapping("/login")
     @Operation(summary = "User login", description = "Authenticate user and return access and refresh tokens")
@@ -66,5 +70,12 @@ public class AuthController {
     @PutMapping("/reset-password")
     public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         return ResponseEntity.ok(authService.resetPassword(request));
+    }
+
+    @GetMapping("/oauth2/login-url")
+    @Operation(summary = "Get OAuth2 login URL", description = "Get the OAuth2 login URL for Google authentication")
+    @ApiResponse(responseCode = "200", description = "OAuth2 login URL retrieved successfully")
+    public ResponseEntity<Map<String, String>> getOAuth2LoginUrl() {
+        return ResponseEntity.ok(Map.of("loginUrl", oauth2LoginUrl));
     }
 }

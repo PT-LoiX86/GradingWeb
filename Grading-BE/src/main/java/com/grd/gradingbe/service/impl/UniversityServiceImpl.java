@@ -9,6 +9,9 @@ import com.grd.gradingbe.model.University;
 import com.grd.gradingbe.repository.UniversityRepository;
 import com.grd.gradingbe.service.UniversityService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,12 +22,22 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UniversityServiceImpl implements UniversityService {
 
     private final UniversityRepository universityRepository;
 
+    /**
+     * Lấy danh sách tất cả universities với pagination và search
+     * Cache theo page, size, sortBy, sortDir và search
+     * Chỉ cache những page đầu tiên (< 5) và khi không có search
+     */
     @Override
+    @Cacheable(value = "universities",
+            key = "'page:' + #page + ':size:' + #size + ':sort:' + #sortBy + ':' + #sortDir + ':search:' + (#search ?: 'none')",
+            condition = "#page < 5 && (#search == null || #search.isEmpty())")
     public PageResponse<UniversityResponse> getAllUniversities(int page, int size, String sortBy, String sortDir, String search) {
+        log.info("Fetching universities from database - page: {}, size: {}, search: {} (cache miss)", page, size, search);
         Sort sortObj = sortBy.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sortObj);
         Page<University> pageUniversity = universityRepository.findAll(pageable);
@@ -40,8 +53,14 @@ public class UniversityServiceImpl implements UniversityService {
                 .build();
     }
 
+    /**
+     * Lấy university theo ID
+     * Cache với key là ID trong 12 giờ
+     */
     @Override
+    @Cacheable(value = "universities", key = "#id")
     public UniversityResponse getUniversityById(Long id) {
+        log.info("Fetching university with id: {} from database (cache miss)", id);
         University university = universityRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("University", "id", id.toString())
         );
@@ -49,8 +68,14 @@ public class UniversityServiceImpl implements UniversityService {
         return mapToUniversityResponse(university);
     }
 
+    /**
+     * Tạo university mới
+     * Xóa toàn bộ cache universities sau khi tạo
+     */
     @Override
+    @CacheEvict(value = "universities", allEntries = true)
     public UniversityResponse createUniversity(UniversityRequest universityRequest) {
+        log.info("Creating new university: {}", universityRequest.getName());
         University university = University.builder()
                 .name(universityRequest.getName())
                 .description(universityRequest.getDescription())
@@ -67,8 +92,14 @@ public class UniversityServiceImpl implements UniversityService {
         return mapToUniversityResponse(savedUniversity);
     }
 
+    /**
+     * Cập nhật university
+     * Xóa toàn bộ cache universities sau khi update
+     */
     @Override
+    @CacheEvict(value = "universities", allEntries = true)
     public UniversityResponse updateUniversity(Long id, UniversityRequest universityRequest) {
+        log.info("Updating university with id: {}", id);
         University university = universityRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("University", "id", id.toString())
         );
@@ -87,8 +118,14 @@ public class UniversityServiceImpl implements UniversityService {
         return mapToUniversityResponse(updatedUniversity);
     }
 
+    /**
+     * Xóa university
+     * Xóa toàn bộ cache universities sau khi delete
+     */
     @Override
+    @CacheEvict(value = "universities", allEntries = true)
     public void deleteUniversity(Long id) {
+        log.info("Deleting university with id: {}", id);
         University university = universityRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("University", "id", id.toString())
         );
