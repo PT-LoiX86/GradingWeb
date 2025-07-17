@@ -1,7 +1,6 @@
 package com.grd.gradingbe.controller;
 
-import com.grd.gradingbe.dto.request.GradeRecordCreateRequest;
-import com.grd.gradingbe.dto.request.GradeRecordUpdateRequest;
+import com.grd.gradingbe.dto.request.GradeRecordRequest;
 import com.grd.gradingbe.dto.response.ApiResponse;
 import com.grd.gradingbe.dto.response.GradeRecordResponse;
 import com.grd.gradingbe.service.GradeRecordService;
@@ -21,7 +20,7 @@ public class GradeRecordController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<GradeRecordResponse>> createGradeRecord(
-            @Valid @RequestBody GradeRecordCreateRequest createDto) {
+            @Valid @RequestBody GradeRecordRequest createDto) {
         GradeRecordResponse created = gradeRecordService.createGradeRecord(createDto);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Grade record created successfully", created));
@@ -63,7 +62,7 @@ public class GradeRecordController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<GradeRecordResponse>> updateGradeRecord(
             @PathVariable Long id,
-            @Valid @RequestBody GradeRecordUpdateRequest updateDto) {
+            @Valid @RequestBody GradeRecordRequest updateDto) {
         GradeRecordResponse updated = gradeRecordService.updateGradeRecord(id, updateDto);
         return ResponseEntity.ok(ApiResponse.success("Updated grade record successfully", updated));
     }

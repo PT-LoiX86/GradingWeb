@@ -1,7 +1,6 @@
 package com.grd.gradingbe.service;
 
-import com.grd.gradingbe.dto.request.GradeRecordCreateRequest;
-import com.grd.gradingbe.dto.request.GradeRecordUpdateRequest;
+import com.grd.gradingbe.dto.request.GradeRecordRequest;
 import com.grd.gradingbe.dto.response.GradeRecordResponse;
 import com.grd.gradingbe.exception.BadRequestException;
 import com.grd.gradingbe.exception.ResourceNotFoundException;
@@ -24,7 +23,7 @@ public class GradeRecordService {
     private final GradeRecordRepository gradeRecordRepository;
     private final GradeRecordMapper gradeRecordMapper;
 
-    public GradeRecordResponse createGradeRecord(@Valid GradeRecordCreateRequest dto) {
+    public GradeRecordResponse createGradeRecord(@Valid GradeRecordRequest dto) {
         if (gradeRecordRepository.existsByStudentProfileIdAndSemesterAndYear(dto.getStudentProfileId(), dto.getSemester(), dto.getYear())) {
             throw new BadRequestException("Grade record already exists for this student in this semester and year.");
         }
@@ -69,11 +68,11 @@ public class GradeRecordService {
                 .collect(Collectors.toList());
     }
 
-    public GradeRecordResponse updateGradeRecord(Long id, @Valid GradeRecordUpdateRequest dto) {
+    public GradeRecordResponse updateGradeRecord(Long id, GradeRecordRequest dto) {
         GradeRecord entity = gradeRecordRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("GradeRecord", "id", id.toString()));
 
-        gradeRecordMapper.updateEntity(entity, dto);
+        gradeRecordMapper.updateEntityFromCreate(entity, dto); // Sử dụng phương thức mới
         GradeRecord updated = gradeRecordRepository.save(entity);
         return gradeRecordMapper.toDto(updated);
     }

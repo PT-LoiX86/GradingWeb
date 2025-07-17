@@ -1,4 +1,5 @@
 package com.grd.gradingbe.dto.request;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GradeRecordUpdateRequest {
+public class GradeRecordRequest {
     private Long studentProfileId;
     private Integer semester;
     private Integer grade;
@@ -17,3 +18,4 @@ public class GradeRecordUpdateRequest {
     private String fileUrl;
     private String notes;
 }
+
