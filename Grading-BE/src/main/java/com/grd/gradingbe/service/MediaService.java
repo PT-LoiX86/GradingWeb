@@ -1,14 +1,14 @@
 package com.grd.gradingbe.service;
 
-import com.amazonaws.services.s3.model.Bucket;
 import com.grd.gradingbe.dto.entity.FileMetadata;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.model.CreateBucketResponse;
 
 import java.io.IOException;
 import java.util.List;
 
 public interface MediaService {
-    Bucket createBucket(String bucketName);
+    CreateBucketResponse createBucket(String bucketName);
 
     List<FileMetadata> uploadFiles(List<MultipartFile> files, String folder) throws IOException;
 

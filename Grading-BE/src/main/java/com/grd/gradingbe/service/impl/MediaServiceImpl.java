@@ -1,8 +1,5 @@
 package com.grd.gradingbe.service.impl;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.*;
 import com.grd.gradingbe.dto.entity.FileMetadata;
 import com.grd.gradingbe.service.MediaService;
 import lombok.RequiredArgsConstructor;
@@ -12,13 +9,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -36,14 +34,24 @@ public class MediaServiceImpl implements MediaService {
     @Value("${aws.s3.endpoint}")
     private String urlStorage;
 
-    private final AmazonS3 amazonS3;
+    private final S3Client s3Client;
 
     private final Tika tika = new Tika();
 
     @Override
-    public Bucket createBucket(String bucketName) {
-        amazonS3.doesBucketExistV2(bucketName);
-        return amazonS3.createBucket(bucketName);
+    public CreateBucketResponse createBucket(String bucketName) {
+        try {
+            HeadBucketRequest headBucketRequest = HeadBucketRequest.builder()
+                    .bucket(bucketName)
+                    .build();
+            s3Client.headBucket(headBucketRequest);
+            return null; // Bucket already exists
+        } catch (NoSuchBucketException e) {
+            CreateBucketRequest createBucketRequest = CreateBucketRequest.builder()
+                    .bucket(bucketName)
+                    .build();
+            return s3Client.createBucket(createBucketRequest);
+        }
     }
 
     @Override
@@ -75,17 +83,23 @@ public class MediaServiceImpl implements MediaService {
         log.info("Deleting files from S3: {}", keyName);
 
         try {
-            List<DeleteObjectsRequest.KeyVersion> keys = new ArrayList<>();
+            List<ObjectIdentifier> keys = new ArrayList<>();
             for (String key : keyName) {
-                keys.add(new DeleteObjectsRequest.KeyVersion(key));
+                keys.add(ObjectIdentifier.builder().key(key).build());
             }
 
-            DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(BUCKET_NAME)
-                    .withKeys(keys);
+            Delete delete = Delete.builder()
+                    .objects(keys)
+                    .build();
 
-            amazonS3.deleteObjects(deleteObjectsRequest);
+            DeleteObjectsRequest deleteObjectsRequest = DeleteObjectsRequest.builder()
+                    .bucket(BUCKET_NAME)
+                    .delete(delete)
+                    .build();
+
+            s3Client.deleteObjects(deleteObjectsRequest);
             log.info("Successfully deleted files from S3: {}", keyName);
-        } catch (AmazonServiceException e) {
+        } catch (S3Exception e) {
             log.error("Error deleting files from S3: {}", e.getMessage());
         }
     }
@@ -100,8 +114,8 @@ public class MediaServiceImpl implements MediaService {
 
         try {
             // Open connection to the URL
-            URL imageUrl = new URL(url);
-            HttpURLConnection connection = (HttpURLConnection) imageUrl.openConnection();
+            java.net.URI uri = java.net.URI.create(url);
+            HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
             connection.setRequestProperty("User-Agent", "Mozilla/5.0");
 
             // Get content type and determine file extension
@@ -142,21 +156,21 @@ public class MediaServiceImpl implements MediaService {
             // Generate unique key for S3
             String key = generateKey(folder, extension);
 
-            // Configure the request to upload to S3
-            ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentType(contentType != null ? contentType : "image/jpeg");
-            metadata.setContentLength(imageBytes.length);
-
-            // Create put request
-            PutObjectRequest putObjectRequest = new PutObjectRequest(
-                    BUCKET_NAME,
-                    key,
-                    new ByteArrayInputStream(imageBytes),
-                    metadata
-            );
+            // Create put request with RequestBody
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(BUCKET_NAME)
+                    .key(key)
+                    .contentType(contentType != null ? contentType : "image/jpeg")
+                    .contentLength((long) imageBytes.length)
+                    .build();
 
             // Upload to S3
-            PutObjectResult putObjectResult = amazonS3.putObject(putObjectRequest);
+            PutObjectResponse putObjectResult = s3Client.putObject(putObjectRequest,
+                    RequestBody.fromBytes(imageBytes));
+
+            // Generate URL
+            String objectUrl = String.format("https://%s.s3.%s.amazonaws.com/%s", 
+                    BUCKET_NAME, "ap-southeast-1", key);
 
             // Log successful upload
             log.info("Successfully uploaded URL image to S3: {}", key);
@@ -169,9 +183,8 @@ public class MediaServiceImpl implements MediaService {
                     .extension(extension)
                     .mime(contentType != null ? contentType : "image/jpeg")
                     .size((long) imageBytes.length)
-                    .url(amazonS3.getUrl(BUCKET_NAME, key).toString())
-                    .hash(putObjectResult.getContentMd5())
-                    .etag(putObjectResult.getETag())
+                    .url(objectUrl)
+                    .etag(putObjectResult.eTag())
                     .publicAccess(true)
                     .build();
 
@@ -215,21 +228,29 @@ public class MediaServiceImpl implements MediaService {
                 .size(file.getSize())
                 .build();
 
-        ObjectMetadata objectMetadata = new ObjectMetadata();
-        objectMetadata.setContentLength(metadata.getSize());
-        objectMetadata.setContentType(metadata.getMime());
-
         log.info("Uploading file to S3: {}", metadata.getName());
 
         try {
-            InputStream stream = file.getInputStream();
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, key, stream, objectMetadata);
-            PutObjectResult putObjectResult = amazonS3.putObject(putObjectRequest);
-            metadata.setUrl(amazonS3.getUrl(bucket, key).toString());
-            metadata.setHash(putObjectResult.getContentMd5());
-            metadata.setEtag(putObjectResult.getETag());
+            // Create put request
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .contentType(metadata.getMime())
+                    .contentLength(metadata.getSize())
+                    .build();
+
+            // Upload to S3
+            PutObjectResponse putObjectResult = s3Client.putObject(putObjectRequest,
+                    RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+
+            // Generate URL
+            String objectUrl = String.format("https://%s.s3.%s.amazonaws.com/%s", 
+                    bucket, "ap-southeast-1", key);
+
+            metadata.setUrl(objectUrl);
+            metadata.setEtag(putObjectResult.eTag());
             metadata.setPublicAccess(true);
-            stream.close();
+
         } catch (IOException e) {
             log.error("Error uploading file to S3", e);
         }
