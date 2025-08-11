@@ -5,20 +5,18 @@ import Footer from './Footer';
 interface FullWidthLayoutProps {
   children: React.ReactNode;
   onLogout: () => Promise<void>;
-  onNavigate: (path: string) => void;
   showContainer?: boolean;
 }
 
 const FullWidthLayout: React.FC<FullWidthLayoutProps> = ({ 
   children, 
   onLogout, 
-  onNavigate, 
   showContainer = true 
 }) => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header full width */}
-      <Header onLogout={onLogout} onNavigate={onNavigate} />
+      <Header onLogout={onLogout} />
       
       {/* Main content có thể full width hoặc có container */}
       <main className="flex-1 w-full">

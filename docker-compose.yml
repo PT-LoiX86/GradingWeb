@@ -48,7 +48,9 @@ services:
       retries: 10
 
   grading-be:
-    image: vietquoc2408/grading-be:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: grading-be
     restart: always
     ports:
@@ -65,7 +67,9 @@ services:
       - grading-network
 
   grading-fe:
-    image: vietquoc2408/grading-fe:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: grading-fe
     restart: always
     ports:
@@ -74,7 +78,6 @@ services:
       - grading-be
     networks:
       - grading-network
-
 volumes:
   pgadmin:
   postgres_data:

@@ -3,9 +3,14 @@ import type {
   RegisterRequest, 
   LoginResponse,
   ErrorResponse,
-  ValidationErrorResponse
+  ValidationErrorResponse,
+  ForumChannel,
+  ForumPost,
+  ForumComment,
+  CreatePostRequest,
+  CreateCommentRequest,
+  PaginationParams
 } from '../types/api';
-import toast from 'react-hot-toast';
 
 // Base API configuration
 const BASE_URL = 'http://localhost:8080/api';
@@ -254,6 +259,72 @@ export const authAPI = {
 
   isAuthenticated: () => {
     return !!localStorage.getItem('accessToken');
+  },
+};
+
+// Forum API
+export const forumAPI = {
+  // Get all forum channels
+  getChannels: async (): Promise<ForumChannel[]> => {
+    return apiClient.get<ForumChannel[]>('/forum/channels');
+  },
+
+  // Create a new channel
+  createChannel: async (channelData: Omit<ForumChannel, 'id' | 'createdAt' | 'updatedAt'>): Promise<ForumChannel> => {
+    return apiClient.post<ForumChannel>('/forum/channels', channelData);
+  },
+
+  // Update a channel
+  updateChannel: async (id: number, channelData: Partial<ForumChannel>): Promise<ForumChannel> => {
+    return apiClient.put<ForumChannel>(`/forum/channels/${id}`, channelData);
+  },
+
+  // Delete a channel
+  deleteChannel: async (id: number): Promise<void> => {
+    return apiClient.delete<void>(`/forum/channels/${id}`);
+  },
+
+  // Get posts with pagination
+  getPosts: async (params: PaginationParams): Promise<{ content: ForumPost[], totalPages: number, totalElements: number }> => {
+    const queryParams = new URLSearchParams();
+    queryParams.append('page', params.page.toString());
+    queryParams.append('size', params.size.toString());
+    if (params.sort) queryParams.append('sort', params.sort);
+    if (params.direction) queryParams.append('direction', params.direction);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.channelId) queryParams.append('channelId', params.channelId.toString());
+
+    return apiClient.get<{ content: ForumPost[], totalPages: number, totalElements: number }>(`/forum/posts?${queryParams.toString()}`);
+  },
+
+  // Create a new post
+  createPost: async (postData: CreatePostRequest): Promise<ForumPost> => {
+    return apiClient.post<ForumPost>('/forum/posts', postData);
+  },
+
+  // Get a single post by ID
+  getPost: async (id: number): Promise<ForumPost> => {
+    return apiClient.get<ForumPost>(`/forum/posts/${id}`);
+  },
+
+  // Like/unlike a post
+  likePost: async (id: number): Promise<void> => {
+    return apiClient.post<void>(`/forum/posts/${id}/like`);
+  },
+
+  // Get comments for a post
+  getComments: async (postId: number): Promise<ForumComment[]> => {
+    return apiClient.get<ForumComment[]>(`/forum/posts/${postId}/comments`);
+  },
+
+  // Create a new comment
+  createComment: async (commentData: CreateCommentRequest): Promise<ForumComment> => {
+    return apiClient.post<ForumComment>('/forum/comments', commentData);
+  },
+
+  // Like/unlike a comment
+  likeComment: async (id: number): Promise<void> => {
+    return apiClient.post<void>(`/forum/comments/${id}/like`);
   },
 };
 

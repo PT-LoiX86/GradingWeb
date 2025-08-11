@@ -58,7 +58,7 @@ const PostDetail: React.FC<PostDetailProps> = ({
       const commentRequest: CreateCommentRequest = {
         content: newComment.trim(),
         postId: post.id,
-        parentCommentId: replyToComment || undefined
+        parentId: replyToComment || undefined
       };
       
       await onAddComment(commentRequest);
@@ -71,11 +71,11 @@ const PostDetail: React.FC<PostDetailProps> = ({
   };
   
   // Group comments by parent
-  const parentComments = comments.filter(comment => !comment.parentCommentId);
-  const childComments = comments.filter(comment => comment.parentCommentId);
+  const parentComments = comments.filter(comment => !comment.parentId);
+  const childComments = comments.filter(comment => comment.parentId);
   
   const getChildComments = (parentId: number) => {
-    return childComments.filter(comment => comment.parentCommentId === parentId);
+    return childComments.filter(comment => comment.parentId === parentId);
   };
   
   return (
@@ -126,7 +126,7 @@ const PostDetail: React.FC<PostDetailProps> = ({
             </div>
             
             <div className="prose max-w-none">
-              {post.content.split('\n').map((paragraph, idx) => (
+              {post.content.split('\n').map((paragraph: string, idx: number) => (
                 <p key={idx}>{paragraph}</p>
               ))}
             </div>
@@ -139,12 +139,12 @@ const PostDetail: React.FC<PostDetailProps> = ({
                 disabled={isLoading}
               >
                 <ThumbsUp className="w-4 h-4 mr-1.5" />
-                <span>{post.likesCount} thích</span>
+                <span>{post.likeCount} thích</span>
               </button>
               
               <div className="flex items-center text-gray-500">
                 <MessageCircle className="w-4 h-4 mr-1.5" />
-                <span>{post.commentsCount} bình luận</span>
+                <span>{post.commentCount} bình luận</span>
               </div>
             </div>
           </div>
@@ -240,7 +240,7 @@ const PostDetail: React.FC<PostDetailProps> = ({
                             disabled={isLoading}
                           >
                             <ThumbsUp className="w-3 h-3 mr-1" />
-                            <span>{comment.likesCount}</span>
+                            <span>{comment.likeCount}</span>
                           </button>
                           
                           <button 
@@ -284,7 +284,7 @@ const PostDetail: React.FC<PostDetailProps> = ({
                                 disabled={isLoading}
                               >
                                 <ThumbsUp className="w-3 h-3 mr-1" />
-                                <span>{childComment.likesCount}</span>
+                                <span>{childComment.likeCount}</span>
                               </button>
                             </div>
                           </div>

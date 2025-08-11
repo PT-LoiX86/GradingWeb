@@ -36,7 +36,6 @@ const ForumPage: React.FC<ForumPageProps> = ({ onLogout }) => {
   });
   
   const [totalPages, setTotalPages] = useState(0);
-  const [totalItems, setTotalItems] = useState(0);
   
   // Fetch posts with current pagination and search params
   const fetchPosts = async () => {
@@ -52,11 +51,8 @@ const ForumPage: React.FC<ForumPageProps> = ({ onLogout }) => {
       }
       
       const response = await forumAPI.getPosts(params);
-      if (response.data) {
-        setPosts(response.data.content || []);
-        setTotalPages(response.data.totalPages || 0);
-        setTotalItems(response.data.totalElements || 0);
-      }
+      setPosts(response.content || []);
+      setTotalPages(response.totalPages || 0);
     } catch (err) {
       setError('Failed to load forum posts');
       console.error(err);
@@ -69,9 +65,7 @@ const ForumPage: React.FC<ForumPageProps> = ({ onLogout }) => {
   const fetchCategories = async () => {
     try {
       const response = await forumAPI.getChannels();
-      if (response.data) {
-        setCategories(response.data.content || []);
-      }
+      setCategories(response);
     } catch (err) {
       setError('Failed to load categories');
       console.error(err);
@@ -82,18 +76,8 @@ const ForumPage: React.FC<ForumPageProps> = ({ onLogout }) => {
   const fetchComments = async (postId: number) => {
     try {
       setCommentsLoading(true);
-      // In a real implementation, you'd filter by postId
-      const response = await forumAPI.getComments({ 
-        page: 0,
-        size: 50,
-        sort: 'createdAt',
-        direction: 'asc'
-      });
-      
-      if (response.data) {
-        const commentsForPost = response.data.content || [];
-        setPostComments(commentsForPost);
-      }
+      const response = await forumAPI.getComments(postId);
+      setPostComments(response);
     } catch (err) {
       console.error('Failed to load comments:', err);
     } finally {
@@ -103,43 +87,23 @@ const ForumPage: React.FC<ForumPageProps> = ({ onLogout }) => {
   
   useEffect(() => {
     const loadData = async () => {
-      await fetchPosts();
-      await fetchCategories();
+      await Promise.all([fetchPosts(), fetchCategories()]);
     };
-    
     loadData();
   }, [pagination.page, pagination.size, pagination.sort, pagination.direction, selectedCategory]);
   
-  // Handler for search
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await fetchPosts();
-  };
-  
-  // Navigate to different page
-  const handlePageChange = (newPage: number) => {
-    setPagination({
-      ...pagination,
-      page: newPage
-    });
-  };
-  
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  
-  // Update dropdown state
-  const toggleCategoryDropdown = () => {
-    setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
-  };
-  
-  // Filter by category
-  const handleCategoryChange = async (categoryId: number | null) => {
-    setSelectedCategory(categoryId);
-    setIsCategoryDropdownOpen(false);
-    setPagination({
-      ...pagination,
-      page: 0 // Reset to first page when changing category
-    });
-  };
+  // Search effect
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      if (pagination.page === 0) {
+        fetchPosts();
+      } else {
+        setPagination({ ...pagination, page: 0 });
+      }
+    }, 500);
+    
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm]);
   
   // Create new post
   const handleCreatePost = async (postData: CreatePostRequest) => {
@@ -147,29 +111,24 @@ const ForumPage: React.FC<ForumPageProps> = ({ onLogout }) => {
       setSubmitting(true);
       const response = await forumAPI.createPost(postData);
       
-      if (response.data) {
-        // Add new post to the list if we're on the first page
-        if (pagination.page === 0) {
-          setPosts(prevPosts => {
-            if (response.data) {
-              return [response.data as ForumPost, ...prevPosts];
-            }
-            return prevPosts;
-          });
-        } else {
-          // If not on first page, go to first page to show the new post
-          setPagination({
-            ...pagination,
-            page: 0
-          });
-        }
-        
-        toast.success('Bài viết đã được tạo thành công');
+      // Add new post to the list if we're on the first page
+      if (pagination.page === 0) {
+        setPosts(prevPosts => {
+          return [response, ...prevPosts];
+        });
+      } else {
+        // If not on first page, go to first page to show the new post
+        setPagination({
+          ...pagination,
+          page: 0
+        });
       }
+      
+      setIsCreateModalOpen(false);
+      toast.success('Post created successfully!');
     } catch (err) {
-      console.error('Error creating post:', err);
-      toast.error('Có lỗi xảy ra khi tạo bài viết');
-      throw err;
+      console.error('Failed to create post:', err);
+      toast.error('Failed to create post');
     } finally {
       setSubmitting(false);
     }
@@ -187,63 +146,55 @@ const ForumPage: React.FC<ForumPageProps> = ({ onLogout }) => {
     try {
       await forumAPI.likePost(postId);
       
-      // Update the likes count in the UI
+      // Update the post in the list
       setPosts(prevPosts => 
         prevPosts.map(post => 
           post.id === postId 
-            ? { ...post, likesCount: post.likesCount + 1 } 
+            ? { ...post, likeCount: post.likeCount + 1 }
             : post
         )
       );
       
-      // If we're viewing this post in detail, update it there too
-      if (selectedPost?.id === postId) {
-        setSelectedPost(prevPost => 
-          prevPost ? { ...prevPost, likesCount: prevPost.likesCount + 1 } : null
-        );
-      }
+      // Update selectedPost if it's the same post
+      setSelectedPost(prevPost => 
+        prevPost && prevPost.id === postId 
+          ? { ...prevPost, likeCount: prevPost.likeCount + 1 }
+          : prevPost
+      );
     } catch (err) {
-      console.error('Error liking post:', err);
-      toast.error('Có lỗi xảy ra khi thích bài viết');
-      throw err;
+      console.error('Failed to like post:', err);
+      toast.error('Failed to like post');
     }
   };
   
-  // Add a comment
-  const handleAddComment = async (comment: CreateCommentRequest) => {
+  // Add comment to post
+  const handleAddComment = async (commentData: CreateCommentRequest) => {
     try {
-      setSubmitting(true);
-      const response = await forumAPI.createComment(comment);
+      const response = await forumAPI.createComment(commentData);
       
-      if (response.data && selectedPost) {
-        // Add the new comment to the list
+      if (selectedPost) {
+        // Add comment to the list
         setPostComments(prevComments => {
-          if (response.data) {
-            return [...prevComments, response.data as ForumComment];
-          }
-          return prevComments;
+          return [...prevComments, response];
         });
         
-        // Update the comments count in the selected post
+        // Update comment count in selectedPost
         setSelectedPost(prevPost => 
-          prevPost ? { ...prevPost, commentsCount: prevPost.commentsCount + 1 } : null
+          prevPost ? { ...prevPost, commentCount: prevPost.commentCount + 1 } : null
         );
         
-        // Also update the post in the list
+        // Update comment count in posts list
         setPosts(prevPosts => 
           prevPosts.map(post => 
             post.id === selectedPost.id 
-              ? { ...post, commentsCount: post.commentsCount + 1 } 
+              ? { ...post, commentCount: post.commentCount + 1 }
               : post
           )
         );
       }
     } catch (err) {
-      console.error('Error adding comment:', err);
-      toast.error('Có lỗi xảy ra khi thêm bình luận');
-      throw err;
-    } finally {
-      setSubmitting(false);
+      console.error('Failed to add comment:', err);
+      toast.error('Failed to add comment');
     }
   };
   
@@ -252,196 +203,161 @@ const ForumPage: React.FC<ForumPageProps> = ({ onLogout }) => {
     try {
       await forumAPI.likeComment(commentId);
       
-      // Update the likes count in the UI
+      // Update the comment in the list
       setPostComments(prevComments => 
         prevComments.map(comment => 
           comment.id === commentId 
-            ? { ...comment, likesCount: comment.likesCount + 1 } 
+            ? { ...comment, likeCount: comment.likeCount + 1 }
             : comment
         )
       );
     } catch (err) {
-      console.error('Error liking comment:', err);
-      toast.error('Có lỗi xảy ra khi thích bình luận');
-      throw err;
+      console.error('Failed to like comment:', err);
+      toast.error('Failed to like comment');
     }
+  };
+  
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    setPagination({
+      ...pagination,
+      page: newPage
+    });
+  };
+  
+  // Handle category filter
+  const handleCategoryChange = (categoryId: number | null) => {
+    setSelectedCategory(categoryId);
+    setPagination({ ...pagination, page: 0 });
   };
   
   return (
     <Layout onLogout={onLogout}>
-      <div className="container mx-auto p-4 max-w-7xl">
-        {/* Header Section */}
-        <div className="bg-white shadow-sm rounded-lg mb-6 p-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Diễn đàn</h1>
-              <p className="text-gray-500 mt-1">Trao đổi, thảo luận về các vấn đề học tập</p>
-            </div>
-            
-            <button 
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">Forum Discussion</h1>
+            <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="mt-4 md:mt-0 flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Bài viết mới
+              <Plus className="w-4 h-4" />
+              <span>New Post</span>
             </button>
           </div>
           
-          {/* Search and Filter Bar */}
-          <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-            <form onSubmit={handleSearch} className="flex-1 relative">
+          {/* Search and filters */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Tìm kiếm bài viết..."
+                placeholder="Search posts..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              <button type="submit" className="sr-only">Search</button>
-            </form>
+            </div>
             
-            {/* Categories Filter */}
             <div className="relative">
-              <button 
-                onClick={toggleCategoryDropdown}
-                className="flex items-center justify-between w-full md:w-56 px-4 py-2 bg-white border border-gray-300 rounded-md focus:outline-none"
+              <select
+                value={selectedCategory || ''}
+                onChange={(e) => handleCategoryChange(e.target.value ? Number(e.target.value) : null)}
+                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <span>{selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'Tất cả danh mục'}</span>
-                <ChevronDown className="w-4 h-4 text-gray-500" />
-              </button>
-              
-              {/* Dropdown */}
-              {isCategoryDropdownOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
-                  <ul className="py-1 max-h-48 overflow-auto">
-                    <li>
-                      <button
-                        onClick={() => handleCategoryChange(null)}
-                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-                      >
-                        Tất cả danh mục
-                      </button>
-                    </li>
-                    {categories.map((category) => (
-                      <li key={category.id}>
-                        <button
-                          onClick={() => handleCategoryChange(category.id)}
-                          className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-                        >
-                          {category.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+                <option value="">All Categories</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
             </div>
           </div>
         </div>
         
-        {/* Error Message */}
+        {/* Error state */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
             {error}
           </div>
         )}
         
-        {/* Loading State */}
+        {/* Loading state */}
         {loading && (
-          <div className="text-center py-12">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-            <p className="mt-3 text-gray-600">Đang tải dữ liệu...</p>
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-2 text-gray-600">Loading posts...</p>
           </div>
         )}
         
-        {/* Posts List */}
-        {!loading && posts.length === 0 ? (
-          <div className="text-center py-16">
-            <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-4 text-lg font-medium text-gray-900">Không có bài viết</h3>
-            <p className="mt-1 text-gray-500">Hãy tạo bài viết đầu tiên để bắt đầu cuộc thảo luận.</p>
-          </div>
-        ) : (
-          <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-            <ul className="divide-y divide-gray-200">
-              {posts.map((post) => (
-                <li 
+        {/* Posts list */}
+        {!loading && (
+          <div className="space-y-4">
+            {posts.length === 0 ? (
+              <div className="text-center py-12">
+                <MessageSquare className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No posts found</h3>
+                <p className="text-gray-600">Be the first to start a discussion!</p>
+              </div>
+            ) : (
+              posts.map(post => (
+                <div 
                   key={post.id} 
-                  className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="bg-white rounded-lg shadow border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
                   onClick={() => handleOpenPostDetail(post)}
                 >
-                  <div className="flex items-start">
-                    {/* User avatar placeholder */}
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-4 text-blue-700 font-semibold">
-                      {post.authorName.substring(0, 2).toUpperCase()}
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{post.title}</h3>
+                      <div className="flex items-center text-sm text-gray-600 space-x-4">
+                        <span>by {post.authorName}</span>
+                        <span>•</span>
+                        <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                      </div>
                     </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 truncate">{post.title}</h3>
-                      
-                      <div className="flex items-center mt-1 text-sm text-gray-500">
-                        <span>{post.authorName}</span>
-                        <span className="mx-2">&middot;</span>
-                        <span>{new Date(post.createdAt).toLocaleDateString('vi-VN')}</span>
-                        <span className="mx-2">&middot;</span>
-                        <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">
-                          {post.channelName}
-                        </span>
-                      </div>
-                      
-                      <p className="mt-3 text-gray-700 line-clamp-2">
-                        {post.content}
-                      </p>
-                      
-                      <div className="mt-4 flex items-center space-x-4 text-sm">
-                        <button 
-                          className="flex items-center text-gray-500 hover:text-blue-600"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleLikePost(post.id);
-                          }}
-                        >
-                          <ThumbsUp className="w-4 h-4 mr-1" />
-                          <span>{post.likesCount}</span>
-                        </button>
-                        <div className="flex items-center text-gray-500">
-                          <MessageCircle className="w-4 h-4 mr-1" />
-                          <span>{post.commentsCount}</span>
-                        </div>
-                      </div>
+                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                      {post.channelName}
+                    </span>
+                  </div>
+                  
+                  <p className="text-gray-700 mb-4 line-clamp-2">
+                    {post.content.length > 150 ? `${post.content.substring(0, 150)}...` : post.content}
+                  </p>
+                  
+                  <div className="flex items-center space-x-6 text-sm text-gray-500">
+                    <div className="flex items-center space-x-1">
+                      <ThumbsUp className="w-4 h-4" />
+                      <span>{post.likeCount}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <MessageCircle className="w-4 h-4" />
+                      <span>{post.commentCount}</span>
                     </div>
                   </div>
-                </li>
-              ))}
-            </ul>
+                </div>
+              ))
+            )}
           </div>
         )}
         
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-between items-center mt-6 pb-6">
-            <div className="text-sm text-gray-600">
-              Hiển thị {posts.length} trên tổng số {totalItems} bài viết
-            </div>
-            
-            <div className="flex space-x-1">
+        {!loading && totalPages > 1 && (
+          <div className="mt-8 flex justify-center">
+            <div className="flex items-center space-x-1">
               <button
-                onClick={() => handlePageChange(Math.max(0, pagination.page! - 1))}
+                onClick={() => handlePageChange(Math.max(0, (pagination.page || 0) - 1))}
                 disabled={pagination.page === 0}
                 className="px-3 py-1 rounded border border-gray-300 text-gray-600 disabled:opacity-50"
               >
                 Previous
               </button>
               
-              {[...Array(Math.min(5, totalPages))].map((_, idx) => {
-                // Logic to show current page and adjacent pages
-                const pageToShow = pagination.page! < 2
-                  ? idx
-                  : pagination.page! - 2 + idx;
-                
-                if (pageToShow >= totalPages) return null;
-                
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const startPage = Math.max(0, Math.min(pagination.page - 2, totalPages - 5));
+                const pageToShow = startPage + i;
                 return (
                   <button
                     key={pageToShow}
@@ -495,4 +411,4 @@ const ForumPage: React.FC<ForumPageProps> = ({ onLogout }) => {
   );
 };
 
-export default ForumPage; 
+export default ForumPage;
