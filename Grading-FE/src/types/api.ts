@@ -70,3 +70,64 @@ export interface ValidationErrorResponse {
   validationErrors: Record<string, string>;
   errorTime: string;
 }
+
+// Forum types
+export interface ForumChannel {
+  id: number;
+  name: string;
+  description: string;
+  color: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ForumPost {
+  id: number;
+  title: string;
+  content: string;
+  authorId: number;
+  authorName: string;
+  channelId: number;
+  channelName: string;
+  likeCount: number;
+  commentCount: number;
+  createdAt: string;
+  updatedAt: string;
+  isLiked?: boolean;
+}
+
+export interface ForumComment {
+  id: number;
+  content: string;
+  authorId: number;
+  authorName: string;
+  postId: number;
+  parentId?: number;
+  likeCount: number;
+  createdAt: string;
+  updatedAt: string;
+  isLiked?: boolean;
+  replies?: ForumComment[];
+}
+
+export interface CreatePostRequest {
+  title: string;
+  content: string;
+  channelId: number;
+}
+
+export interface CreateCommentRequest {
+  content: string;
+  postId: number;
+  parentId?: number;
+}
+
+export interface PaginationParams {
+  page: number;
+  size: number;
+  sort?: string;
+  direction?: 'asc' | 'desc';
+  search?: string;
+  channelId?: number;
+}
